@@ -1,18 +1,30 @@
-import { Button } from "@/components/ui/button"
+import { BrowserRouter, Routes, Route } from "react-router-dom"
+
+import RootLayout from "src/components/layout/RootLayout"
+import AdminLayout from "src/components/layout/AdminLayout"
+import Home from "src/pages/Home"
+import Destinations from "src/pages/Destinations"
+import TripCustomizer from "src/pages/TripCustomizer"
+import Contact from "src/pages/Contact"
+import NotFound from "src/pages/NotFound"
+import AdminDashboard from "src/pages/AdminDashboard"
 
 function App() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="flex flex-col items-center gap-6">
-        <h1 className="text-5xl font-bold tracking-tight text-foreground sm:text-6xl">
-          Welcome to Vrajatian
-        </h1>
-        <p className="text-lg text-muted-foreground">
-          Your project is ready. Start building.
-        </p>
-        <Button>Get Started</Button>
-      </div>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route element={<RootLayout />}>
+          <Route index element={<Home />} />
+          <Route path="destinations" element={<Destinations />} />
+          <Route path="plan-trip" element={<TripCustomizer />} />
+          <Route path="contact" element={<Contact />} />
+          <Route path="*" element={<NotFound />} />
+        </Route>
+        <Route path="admin" element={<AdminLayout />}>
+          <Route index element={<AdminDashboard />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   )
 }
 
