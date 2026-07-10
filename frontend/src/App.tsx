@@ -5,6 +5,7 @@ import RootLayout from "src/components/layout/RootLayout"
 import AdminLayout from "src/components/layout/AdminLayout"
 import Home from "src/pages/Home"
 import Destinations from "src/pages/Destinations"
+import DestinationDetail from "src/pages/DestinationDetail"
 import TripCustomizer from "src/pages/TripCustomizer"
 import Contact from "src/pages/Contact"
 import MyBookings from "src/pages/MyBookings"
@@ -20,6 +21,7 @@ function App() {
         <Route element={<RootLayout />}>
           <Route index element={<Home />} />
           <Route path="destinations" element={<Destinations />} />
+          <Route path="destinations/:packageId" element={<DestinationDetail />} />
           <Route path="plan-trip" element={<TripCustomizer />} />
           <Route path="contact" element={<Contact />} />
           <Route path="my-bookings" element={<MyBookings />} />

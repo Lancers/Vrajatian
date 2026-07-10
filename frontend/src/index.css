@@ -10,7 +10,7 @@
     --card-foreground: oklch(0.145 0 0);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0.042 265.755);
+    --primary: oklch(0.588 0.158 241.966);
     --primary-foreground: oklch(0.985 0 0);
     --secondary: oklch(0.965 0.001 286.375);
     --secondary-foreground: oklch(0.205 0.042 265.755);
@@ -22,7 +22,7 @@
     --destructive-foreground: oklch(0.985 0 0);
     --border: oklch(0.91 0.005 286.375);
     --input: oklch(0.91 0.005 286.375);
-    --ring: oklch(0.205 0.042 265.755);
+    --ring: oklch(0.588 0.158 241.966);
     --radius: 0.5rem;
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -41,8 +41,8 @@
     --card-foreground: oklch(0.985 0 0);
     --popover: oklch(0.145 0 0);
     --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.985 0 0);
-    --primary-foreground: oklch(0.205 0.042 265.755);
+    --primary: oklch(0.685 0.169 237.323);
+    --primary-foreground: oklch(0.145 0 0);
     --secondary: oklch(0.27 0.013 286.375);
     --secondary-foreground: oklch(0.985 0 0);
     --muted: oklch(0.27 0.013 286.375);
@@ -53,7 +53,7 @@
     --destructive-foreground: oklch(0.985 0 0);
     --border: oklch(0.27 0.013 286.375);
     --input: oklch(0.27 0.013 286.375);
-    --ring: oklch(0.87 0.013 286.375);
+    --ring: oklch(0.685 0.169 237.323);
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -71,5 +71,22 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  .animate-marquee {
+    animation: marquee 35s linear infinite;
+  }
+  .animate-marquee:hover {
+    animation-play-state: paused;
   }
 }
