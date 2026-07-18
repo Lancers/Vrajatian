@@ -89,4 +89,10 @@
   .animate-marquee:hover {
     animation-play-state: paused;
   }
+
+  .glass-panel {
+    background-color: color-mix(in oklch, var(--card) 60%, transparent) !important;
+    backdrop-filter: blur(16px);
+    border: 1px solid color-mix(in oklch, var(--border) 40%, transparent);
+  }
 }

@@ -3,18 +3,12 @@ import { Link } from "react-router-dom"
 import { ArrowRight, Clock, Heart, MapPin, Star, Users } from "lucide-react"
 
 import { cn } from "src/lib/utils"
-import { Badge } from "src/components/ui/badge"
 import type { TravelPackage } from "src/lib/data/packages"
 
 function formatPrice(price: number) {
   return `₹${price.toLocaleString("en-IN")}`
 }
 
-const difficultyClasses: Record<TravelPackage["difficulty"], string> = {
-  Easy: "bg-emerald-500/90 text-white",
-  Medium: "bg-orange-500/90 text-white",
-  Hard: "bg-red-500/90 text-white",
-}
 
 interface PackageCardProps {
   pkg: TravelPackage
@@ -22,7 +16,6 @@ interface PackageCardProps {
 
 function PackageCard({ pkg }: PackageCardProps) {
   const [liked, setLiked] = useState(false)
-  const isFeatured = pkg.rating >= 4.9
 
   function handleLike(e: React.MouseEvent) {
     e.preventDefault()
@@ -41,12 +34,6 @@ function PackageCard({ pkg }: PackageCardProps) {
         className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/5" />
-
-      {isFeatured && (
-        <span className="absolute left-1/2 top-5 -translate-x-1/2 rounded-full bg-amber-400 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-black shadow">
-          Popular Choice
-        </span>
-      )}
 
       <button
         onClick={handleLike}
@@ -85,9 +72,6 @@ function PackageCard({ pkg }: PackageCardProps) {
           <span className="flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold">
             <Users size={12} /> {pkg.groupSize} Max
           </span>
-          <Badge className={cn("border-0 text-[11px] font-bold", difficultyClasses[pkg.difficulty])}>
-            {pkg.difficulty}
-          </Badge>
         </div>
 
         <div className="flex items-end justify-between border-t border-white/10 pt-4">
