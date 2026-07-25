@@ -8,6 +8,8 @@ import { Apple } from "src/components/icons/apple"
 import { Google } from "src/components/icons/google"
 import { Meta } from "src/components/icons/meta"
 import { cn } from "src/lib/utils"
+import { supabase } from "src/lib/supabase"
+import { isCurrentUserAdmin } from "src/lib/data/packages"
 import { Button } from "src/components/ui/button"
 import { Card, CardContent } from "src/components/ui/card"
 import {
@@ -29,10 +31,6 @@ function validateEmail(email: string): string | undefined {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Invalid email format"
 }
 
-function validatePassword(_password: string): string | undefined {
-  return undefined
-}
-
 export default function LoginPage({
   className,
   ...props
@@ -46,26 +44,28 @@ export default function LoginPage({
 
   const allValid = email && password
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
     const emailError = validateEmail(email)
-    const passwordError = validatePassword(password)
-    setErrors({ email: emailError, password: passwordError })
+    setErrors({ email: emailError })
+    if (emailError) return
 
-    if (emailError || passwordError) return
+    setLoading(true)
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
 
-    if (email !== "admin@gmail.com" || password !== "admin123") {
+    if (error) {
+      setLoading(false)
       setErrors({ email: "Invalid email or password", password: "Invalid email or password" })
       return
     }
 
-    setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
-      toast.success("Welcome back!")
-      navigate("/admin")
-    }, 1500)
+    // Admins land in the dashboard; everyone else goes to the public site.
+    const admin = await isCurrentUserAdmin()
+    setLoading(false)
+
+    toast.success("Welcome back!")
+    navigate(admin ? "/admin" : "/")
   }
 
   return (

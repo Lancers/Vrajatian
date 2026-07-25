@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { ArrowRight, Compass, HelpCircle, RefreshCw } from "lucide-react"
 
@@ -52,10 +52,31 @@ const QUESTIONS: Question[] = [
   },
 ]
 
+const VIBE_KEYWORDS: Record<string, string[]> = {
+  adventure: ["trek", "adventure", "mountain", "himalay", "hill", "camp", "hike", "valley"],
+  beach: ["beach", "island", "coast", "goa", "andaman", "backwater", "sea", "shore"],
+  heritage: ["heritage", "fort", "palace", "royal", "rajasthan", "history", "culture", "haveli"],
+  spiritual: ["spiritual", "temple", "ghat", "sacred", "varanasi", "pilgrim", "aarti"],
+}
+
+function matchesVibe(pkg: TravelPackage, vibe: string): boolean {
+  const haystack = `${pkg.title} ${pkg.location} ${pkg.region} ${pkg.description}`.toLowerCase()
+  const keywordHit = (VIBE_KEYWORDS[vibe] ?? []).some((k) => haystack.includes(k))
+  if (vibe === "adventure") return keywordHit || pkg.difficulty !== "Easy"
+  return keywordHit
+}
+
 function TravelQuiz() {
   const [step, setStep] = useState(0) // 0: intro, 1-3: questions, 4: matching loader, 5: result
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [matchedPkg, setMatchedPkg] = useState<TravelPackage | null>(null)
+  const [packages, setPackages] = useState<TravelPackage[]>([])
+
+  useEffect(() => {
+    getPackages()
+      .then((pkgs) => setPackages(pkgs))
+      .catch(() => setPackages([]))
+  }, [])
 
   function handleSelect(questionId: string, value: string) {
     const updatedAnswers = { ...answers, [questionId]: value }
@@ -67,25 +88,13 @@ function TravelQuiz() {
       setStep(QUESTIONS.length + 1) // Set loading step
 
       setTimeout(() => {
-        const allPackages = getPackages()
         const vibe = updatedAnswers["vibe"]
         const budget = updatedAnswers["budget"]
 
-        // Logic to find matched package
-        let candidates = [...allPackages]
+        // Match on the package's own attributes/keywords so it works for any catalog.
+        const vibeMatches = packages.filter((p) => matchesVibe(p, vibe))
+        const candidates = vibeMatches.length > 0 ? vibeMatches : packages
 
-        // Filter by vibe
-        if (vibe === "adventure") {
-          candidates = allPackages.filter((p) => p.id === "pkg-himachal-manali" || p.difficulty === "Hard")
-        } else if (vibe === "beach") {
-          candidates = allPackages.filter((p) => p.id === "pkg-goa-beach" || p.id === "pkg-andaman-islands" || p.id === "pkg-kerala-backwaters")
-        } else if (vibe === "heritage") {
-          candidates = allPackages.filter((p) => p.id === "pkg-rajasthan-heritage" || p.id === "pkg-gujarat-kutch")
-        } else if (vibe === "spiritual") {
-          candidates = allPackages.filter((p) => p.id === "pkg-varanasi-spiritual")
-        }
-
-        // Filter by budget
         let budgetFiltered = candidates
         if (budget === "budget") {
           budgetFiltered = candidates.filter((p) => p.price <= 20000)
@@ -95,11 +104,8 @@ function TravelQuiz() {
           budgetFiltered = candidates.filter((p) => p.price > 35000)
         }
 
-        // Fallback if no specific candidate exists in that budget tier
         const finalCandidates = budgetFiltered.length > 0 ? budgetFiltered : candidates
-        
-        // Pick highest rated candidate, fallback to first
-        const match = finalCandidates.sort((a, b) => b.rating - a.rating)[0] || allPackages[0]
+        const match = [...finalCandidates].sort((a, b) => b.rating - a.rating)[0] ?? null
 
         setMatchedPkg(match)
         setStep(QUESTIONS.length + 2) // Result step
@@ -243,7 +249,7 @@ function TravelQuiz() {
                     asChild
                     className="rounded-full gap-2 w-full sm:w-auto"
                   >
-                    <Link to={`/destinations/${matchedPkg.id}`}>
+                    <Link to={`/destinations/${matchedPkg.slug}`}>
                       View Details & Customize <ArrowRight size={14} />
                     </Link>
                   </Button>

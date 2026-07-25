@@ -14,29 +14,61 @@ import { Button } from "src/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "src/components/ui/tabs"
 import PackageCard from "src/components/travel/PackageCard"
 import BookingWizard from "src/components/travel/BookingWizard"
-import { getPackages, type TravelPackage } from "src/lib/data/packages"
+import { getPackageBySlug, getPackages, type TravelPackage } from "src/lib/data/packages"
 
 function formatPrice(price: number) {
   return `₹${price.toLocaleString("en-IN")}`
 }
 
 function DestinationDetail() {
-  const { packageId } = useParams()
+  const { slug } = useParams()
   const navigate = useNavigate()
+  const [pkg, setPkg] = useState<TravelPackage | null>(null)
+  const [loading, setLoading] = useState(true)
   const [packages, setPackages] = useState<TravelPackage[]>([])
   const [bookingOpen, setBookingOpen] = useState(false)
 
+  // The package itself comes from the by-slug endpoint; the full list is only
+  // needed for the "similar destinations" row below.
   useEffect(() => {
-    setPackages(getPackages())
+    if (!slug) return
+    let cancelled = false
+    setLoading(true)
+
+    getPackageBySlug(slug)
+      .then((found) => {
+        if (cancelled) return
+        if (!found) {
+          navigate("/destinations", { replace: true })
+          return
+        }
+        setPkg(found)
+      })
+      .catch(() => {
+        if (!cancelled) navigate("/destinations", { replace: true })
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [slug, navigate])
+
+  useEffect(() => {
+    getPackages()
+      .then((pkgs) => setPackages(pkgs))
+      .catch(() => setPackages([]))
   }, [])
 
-  const pkg = packages.find((p) => p.id === packageId)
-
-  useEffect(() => {
-    if (packages.length > 0 && !pkg) {
-      navigate("/destinations", { replace: true })
-    }
-  }, [packages, pkg, navigate])
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-20 text-center text-sm text-muted-foreground">
+        Loading…
+      </div>
+    )
+  }
 
   if (!pkg) return null
 

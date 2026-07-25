@@ -19,11 +19,16 @@ function Home() {
   const [packages, setPackages] = useState<TravelPackage[]>([])
 
   useEffect(() => {
-    setPackages(getPackages())
+    getPackages()
+      .then((pkgs) => setPackages(pkgs))
+      .catch(() => setPackages([]))
   }, [])
 
   const regions = Array.from(new Set(packages.map((p) => p.region)))
-  const featured = [...packages].sort((a, b) => b.rating - a.rating).slice(0, 3)
+  // Admin-flagged packages lead; if none are flagged yet, fall back to the
+  // highest rated so the section is never empty.
+  const flagged = packages.filter((p) => p.isFeatured)
+  const featured = (flagged.length > 0 ? flagged : [...packages].sort((a, b) => b.rating - a.rating)).slice(0, 3)
 
   return (
     <div className="space-y-0">

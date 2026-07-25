@@ -21,7 +21,7 @@ function App() {
         <Route element={<RootLayout />}>
           <Route index element={<Home />} />
           <Route path="destinations" element={<Destinations />} />
-          <Route path="destinations/:packageId" element={<DestinationDetail />} />
+          <Route path="destinations/:slug" element={<DestinationDetail />} />
           <Route path="plan-trip" element={<TripCustomizer />} />
           <Route path="contact" element={<Contact />} />
           <Route path="my-bookings" element={<MyBookings />} />

@@ -24,7 +24,7 @@ function PackageCard({ pkg }: PackageCardProps) {
 
   return (
     <Link
-      to={`/destinations/${pkg.id}`}
+      to={`/destinations/${pkg.slug}`}
       className="group relative flex h-[420px] flex-col justify-end overflow-hidden rounded-2xl border shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
     >
       <img

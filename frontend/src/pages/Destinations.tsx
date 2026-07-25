@@ -19,11 +19,10 @@ function Destinations() {
   const [maxPrice, setMaxPrice] = useState(searchParams.get("maxPrice") ?? "")
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setPackages(getPackages())
-      setLoading(false)
-    }, 300)
-    return () => clearTimeout(timer)
+    getPackages()
+      .then((pkgs) => setPackages(pkgs))
+      .catch(() => setPackages([]))
+      .finally(() => setLoading(false))
   }, [])
 
   const regions = useMemo(() => Array.from(new Set(packages.map((p) => p.region))), [packages])
