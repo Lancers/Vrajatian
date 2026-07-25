@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "src/components/ui/tabs
 import PackageCard from "src/components/travel/PackageCard"
 import BookingWizard from "src/components/travel/BookingWizard"
 import { getPackageBySlug, getPackages, type TravelPackage } from "src/lib/data/packages"
+import { formatDuration } from "src/lib/utils"
 
 function formatPrice(price: number) {
   return `₹${price.toLocaleString("en-IN")}`
@@ -113,7 +114,7 @@ function DestinationDetail() {
           <div className="mb-8 flex flex-col gap-4 rounded-xl border bg-card p-6 sm:flex-row sm:gap-8">
             <div>
               <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Duration</div>
-              <div className="font-semibold">{pkg.duration}</div>
+              <div className="font-semibold">{formatDuration(pkg.duration)}</div>
             </div>
             <div className="border-t pt-4 sm:border-l sm:border-t-0 sm:pl-8 sm:pt-0">
               <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Group limit</div>
@@ -182,7 +183,7 @@ function DestinationDetail() {
           <div className="mb-6 space-y-3 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Trip duration:</span>
-              <strong>{pkg.duration}</strong>
+              <strong>{formatDuration(pkg.duration)}</strong>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Max group limit:</span>

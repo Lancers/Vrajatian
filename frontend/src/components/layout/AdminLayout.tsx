@@ -6,6 +6,7 @@ import { SidebarProvider, SidebarInset } from "src/components/ui/sidebar"
 import { AppSidebar } from "src/components/common/Sidebar"
 import { supabase } from "src/lib/supabase"
 import { isCurrentUserAdmin } from "src/lib/data/packages"
+import { AdminDataProvider } from "src/components/layout/AdminDataContext"
 
 function AdminLayout() {
   const navigate = useNavigate()
@@ -57,12 +58,14 @@ function AdminLayout() {
   }
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset className="flex min-h-screen flex-col">
-        <Outlet />
-      </SidebarInset>
-    </SidebarProvider>
+    <AdminDataProvider>
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset className="flex min-h-screen flex-col">
+          <Outlet />
+        </SidebarInset>
+      </SidebarProvider>
+    </AdminDataProvider>
   )
 }
 

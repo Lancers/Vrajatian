@@ -1,6 +1,7 @@
 import { Avatar, AvatarImage, AvatarFallback } from "src/components/ui/avatar"
 import { Badge } from "src/components/ui/badge"
 import { Card, CardContent } from "src/components/ui/card"
+import { formatDateDDMMYYYY } from "src/lib/utils"
 import type { Booking } from "src/lib/data/bookings"
 
 const statusLabels: Record<Booking["status"], string> = {
@@ -13,14 +14,6 @@ const statusVariants: Record<Booking["status"], "default" | "secondary" | "outli
   upcoming: "default",
   completed: "secondary",
   cancelled: "outline",
-}
-
-function formatDate(date: string) {
-  return new Date(date).toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  })
 }
 
 function formatPrice(price: number) {
@@ -48,7 +41,7 @@ export function BookingCard({ booking }: BookingCardProps) {
         </div>
         <div className="grid grid-cols-2 gap-1 text-sm">
           <span className="text-muted-foreground">Dates</span>
-          <span>{formatDate(booking.startDate)} — {formatDate(booking.endDate)}</span>
+          <span>{formatDateDDMMYYYY(booking.startDate)} — {formatDateDDMMYYYY(booking.endDate)}</span>
           <span className="text-muted-foreground">Travelers</span>
           <span>{booking.travelers} {booking.travelers === 1 ? "traveler" : "travelers"}</span>
           <span className="text-muted-foreground">Total</span>

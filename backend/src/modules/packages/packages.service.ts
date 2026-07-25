@@ -38,6 +38,13 @@ export class PackagesService {
     return this.toResponse(row);
   }
 
+  /** Used by booking-requests to validate a packageId and snapshot its title/price. */
+  async getPublishedById(id: string): Promise<PackageResponse> {
+    const row = await this.repo.findById(id);
+    if (!row || row.status !== 'published') throw new NotFoundException('Package not found.');
+    return this.toResponse(row);
+  }
+
   // ── Admin ───────────────────────────────────────────────────────────────
   async listAll(): Promise<PackageResponse[]> {
     return (await this.repo.listAll()).map((r) => this.toResponse(r));

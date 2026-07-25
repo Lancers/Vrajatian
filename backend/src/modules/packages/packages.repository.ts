@@ -1,6 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { SupabaseService } from '../../common/supabase/supabase.service';
+import { CacheService } from '../../common/cache/cache.service';
 import { PackageInput } from './package.dto';
+import { sniffImageType } from './image-sniff';
+
+const PUBLIC_CACHE_TTL_SECONDS = 60;
+const PUBLIC_CACHE_PREFIX = 'packages:';
 
 export interface PackageRow {
   id: string;
@@ -36,7 +41,10 @@ function slugify(value: string): string {
 /** All SQL / storage access for packages lives here — isolated from business logic. */
 @Injectable()
 export class PackagesRepository {
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly cache: CacheService,
+  ) {}
 
   private get db() {
     return this.supabase.admin;
@@ -48,13 +56,20 @@ export class PackagesRepository {
   }
 
   async listPublished(): Promise<PackageRow[]> {
+    const cacheKey = `${PUBLIC_CACHE_PREFIX}published`;
+    const cached = this.cache.get<PackageRow[]>(cacheKey);
+    if (cached) return cached;
+
     const { data, error } = await this.db
       .from('packages')
       .select(SELECT_COLS)
       .eq('status', 'published')
       .order('created_at', { ascending: false });
     if (error) throw error;
-    return (data ?? []) as unknown as PackageRow[];
+
+    const rows = (data ?? []) as unknown as PackageRow[];
+    this.cache.set(cacheKey, rows, PUBLIC_CACHE_TTL_SECONDS);
+    return rows;
   }
 
   async listAll(): Promise<PackageRow[]> {
@@ -67,6 +82,10 @@ export class PackagesRepository {
   }
 
   async findPublishedBySlug(slug: string): Promise<PackageRow | null> {
+    const cacheKey = `${PUBLIC_CACHE_PREFIX}slug:${slug}`;
+    const cached = this.cache.get<PackageRow | null>(cacheKey);
+    if (cached !== undefined) return cached;
+
     const { data, error } = await this.db
       .from('packages')
       .select(SELECT_COLS)
@@ -74,7 +93,10 @@ export class PackagesRepository {
       .eq('status', 'published')
       .maybeSingle();
     if (error) throw error;
-    return (data as unknown as PackageRow) ?? null;
+
+    const row = (data as unknown as PackageRow) ?? null;
+    this.cache.set(cacheKey, row, PUBLIC_CACHE_TTL_SECONDS);
+    return row;
   }
 
   async findById(id: string): Promise<PackageRow | null> {
@@ -87,12 +109,20 @@ export class PackagesRepository {
     return (data as unknown as PackageRow) ?? null;
   }
 
+  /**
+   * Type is determined from the file's actual bytes, not the client-declared
+   * Content-Type/filename — both are attacker-controlled on a multipart
+   * upload, and either could otherwise steer the stored extension/Content-Type.
+   */
   async uploadCover(file: Express.Multer.File): Promise<string> {
-    const ext = file.originalname.split('.').pop()?.toLowerCase() || 'jpg';
-    const path = `${crypto.randomUUID()}.${ext}`;
+    const sniffed = sniffImageType(file.buffer);
+    if (!sniffed) {
+      throw new BadRequestException('Cover image must be a JPEG, PNG, or WebP.');
+    }
+    const path = `${crypto.randomUUID()}.${sniffed.ext}`;
     const { error } = await this.db.storage
       .from(this.supabase.bucket)
-      .upload(path, file.buffer, { contentType: file.mimetype, cacheControl: '3600', upsert: false });
+      .upload(path, file.buffer, { contentType: sniffed.mime, cacheControl: '3600', upsert: false });
     if (error) throw error;
     return path;
   }
@@ -128,7 +158,10 @@ export class PackagesRepository {
         .insert({ ...record, slug })
         .select(SELECT_COLS)
         .single();
-      if (!error) return data as unknown as PackageRow;
+      if (!error) {
+        this.cache.delByPrefix(PUBLIC_CACHE_PREFIX);
+        return data as unknown as PackageRow;
+      }
       // 23505 = unique_violation (slug taken) — try the next suffix.
       if (error.code !== '23505') {
         await this.removeCover(coverImagePath);
@@ -169,11 +202,13 @@ export class PackagesRepository {
       .select(SELECT_COLS)
       .single();
     if (error) throw error;
+    this.cache.delByPrefix(PUBLIC_CACHE_PREFIX);
     return data as unknown as PackageRow;
   }
 
   async delete(id: string): Promise<void> {
     const { error } = await this.db.from('packages').delete().eq('id', id);
     if (error) throw error;
+    this.cache.delByPrefix(PUBLIC_CACHE_PREFIX);
   }
 }

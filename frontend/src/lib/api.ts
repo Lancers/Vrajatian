@@ -46,6 +46,26 @@ export const api = {
     return handle(await fetch(`${API_BASE}${path}`, { headers: await authHeader() })) as Promise<T>
   },
 
+  /** Public JSON POST (no auth). */
+  async post<T>(path: string, body: unknown): Promise<T> {
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+    return handle(res) as Promise<T>
+  },
+
+  /** Authenticated JSON PATCH (admin). */
+  async patchAuthed<T>(path: string, body: unknown): Promise<T> {
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await authHeader()) },
+      body: JSON.stringify(body),
+    })
+    return handle(res) as Promise<T>
+  },
+
   /** Authenticated multipart POST/PATCH (admin) — sends FormData with an optional file. */
   async sendForm<T>(method: "POST" | "PATCH", path: string, form: FormData): Promise<T> {
     const res = await fetch(`${API_BASE}${path}`, {

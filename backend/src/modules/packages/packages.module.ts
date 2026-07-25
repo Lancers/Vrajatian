@@ -7,5 +7,6 @@ import { PackagesRepository } from './packages.repository';
 @Module({
   controllers: [PackagesController, AdminPackagesController],
   providers: [PackagesService, PackagesRepository],
+  exports: [PackagesService],
 })
 export class PackagesModule {}

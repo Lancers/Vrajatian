@@ -15,15 +15,49 @@ const contactInfo = [
   { icon: Mail, label: "Email", value: "hello@vrajatian.com" },
 ]
 
-function Contact() {
-  const [loading, setLoading] = useState(false)
+interface FormState {
+  name: string
+  email: string
+  subject: string
+  message: string
+}
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+const INITIAL_FORM: FormState = { name: "", email: "", subject: "", message: "" }
+
+function buildWhatsAppUrl(form: FormState): string | null {
+  const number = import.meta.env.VITE_WHATSAPP_NUMBER as string | undefined
+  if (!number) return null
+
+  const text = [
+    "New Contact Message",
+    `Name: ${form.name}`,
+    `Email: ${form.email}`,
+    `Subject: ${form.subject || "General Inquiry"}`,
+    `Message: ${form.message}`,
+  ].join("\n")
+
+  return `https://wa.me/${number}?text=${encodeURIComponent(text)}`
+}
+
+function Contact() {
+  const [form, setForm] = useState<FormState>(INITIAL_FORM)
+
+  function update<K extends keyof FormState>(key: K, value: FormState[K]) {
+    setForm((prev) => ({ ...prev, [key]: value }))
+  }
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    setLoading(true)
-    await new Promise((r) => setTimeout(r, 1200))
-    setLoading(false)
-    toast.success("Message sent! We'll get back to you soon.")
+
+    const url = buildWhatsAppUrl(form)
+    if (!url) {
+      toast.error("WhatsApp isn't configured yet. Please try again later.")
+      return
+    }
+
+    window.open(url, "_blank", "noopener,noreferrer")
+    toast.success("Opening WhatsApp so you can send us your message directly.")
+    setForm(INITIAL_FORM)
   }
 
   return (
@@ -51,23 +85,48 @@ function Contact() {
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="space-y-2">
                   <Label htmlFor="name">Name</Label>
-                  <Input id="name" placeholder="Your name" required />
+                  <Input
+                    id="name"
+                    placeholder="Your name"
+                    required
+                    value={form.name}
+                    onChange={(e) => update("name", e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" placeholder="you@example.com" required />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    required
+                    value={form.email}
+                    onChange={(e) => update("email", e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="subject">Subject</Label>
-                  <Input id="subject" placeholder="How can we help?" />
+                  <Input
+                    id="subject"
+                    placeholder="How can we help?"
+                    value={form.subject}
+                    onChange={(e) => update("subject", e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="message">Message</Label>
-                  <Textarea id="message" rows={5} placeholder="Tell us more about what you're looking for…" required />
+                  <Textarea
+                    id="message"
+                    rows={5}
+                    placeholder="Tell us more about what you're looking for…"
+                    required
+                    value={form.message}
+                    onChange={(e) => update("message", e.target.value)}
+                  />
                 </div>
-                <Button type="submit" disabled={loading} className="w-full sm:w-auto">
+                <Button type="submit" className="w-full sm:w-auto">
                   <Send className="mr-2 h-4 w-4" />
-                  {loading ? "Sending…" : "Send Message"}
+                  Send via WhatsApp
                 </Button>
               </form>
             </CardContent>

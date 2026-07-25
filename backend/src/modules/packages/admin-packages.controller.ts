@@ -14,24 +14,15 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AdminGuard } from '../../common/auth/admin.guard';
+import { parseWithSchema } from '../../common/validation/parse-with-schema';
 import { PackagesService } from './packages.service';
 import { PackageResponse, packageInputSchema } from './package.dto';
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
-const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp'];
 
-function parseInput(body: Record<string, unknown>) {
-  const parsed = packageInputSchema.safeParse(body);
-  if (!parsed.success) {
-    throw new BadRequestException(parsed.error.issues.map((i) => i.message));
-  }
-  return parsed.data;
-}
-
-function validateImage(file: Express.Multer.File) {
-  if (!ALLOWED_MIME.includes(file.mimetype)) {
-    throw new BadRequestException('Cover image must be a JPEG, PNG, or WebP.');
-  }
+// Cheap fail-fast check. The authoritative type check (real file bytes, not
+// the client-declared Content-Type) happens in PackagesRepository.uploadCover.
+function validateImageSize(file: Express.Multer.File) {
   if (file.size > MAX_IMAGE_BYTES) {
     throw new BadRequestException('Cover image must be 5 MB or smaller.');
   }
@@ -61,8 +52,8 @@ export class AdminPackagesController {
     @UploadedFile() image?: Express.Multer.File,
   ): Promise<PackageResponse> {
     if (!image) throw new BadRequestException('A cover image is required.');
-    validateImage(image);
-    return this.packages.create(parseInput(body), image);
+    validateImageSize(image);
+    return this.packages.create(parseWithSchema(packageInputSchema, body), image);
   }
 
   @Patch(':id')
@@ -72,8 +63,8 @@ export class AdminPackagesController {
     @Body() body: Record<string, unknown>,
     @UploadedFile() image?: Express.Multer.File,
   ): Promise<PackageResponse> {
-    if (image) validateImage(image);
-    return this.packages.update(id, parseInput(body), image);
+    if (image) validateImageSize(image);
+    return this.packages.update(id, parseWithSchema(packageInputSchema, body), image);
   }
 
   @Delete(':id')

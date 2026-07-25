@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Link } from "react-router-dom"
 import { ArrowRight, Clock, Heart, MapPin, Star, Users } from "lucide-react"
 
-import { cn } from "src/lib/utils"
+import { cn, formatDuration } from "src/lib/utils"
 import type { TravelPackage } from "src/lib/data/packages"
 
 function formatPrice(price: number) {
@@ -67,7 +67,7 @@ function PackageCard({ pkg }: PackageCardProps) {
 
         <div className="flex flex-wrap items-center gap-2">
           <span className="flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold">
-            <Clock size={12} /> {pkg.duration.split(",")[0]}
+            <Clock size={12} /> {formatDuration(pkg.duration).split(",")[0]}
           </span>
           <span className="flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold">
             <Users size={12} /> {pkg.groupSize} Max

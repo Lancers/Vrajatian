@@ -97,6 +97,86 @@ create policy "admins delete package images" on storage.objects
   for delete to authenticated
   using (bucket_id = 'package-images' and public.is_admin());
 
+-- 5. Booking requests ---------------------------------------------------------
+-- Public visitors submit these via the NestJS API (service-role key), never a
+-- direct browser insert — see backend/src/modules/booking-requests. RLS below
+-- is defense-in-depth, not the primary gate.
+create table if not exists public.booking_requests (
+  id                uuid primary key default gen_random_uuid(),
+  package_id        uuid references public.packages(id) on delete set null,
+  package_title     text not null,           -- snapshot at submission time
+  package_price     numeric(12,2) not null,  -- snapshot at submission time
+  start_date        date not null,
+  travelers         int not null check (travelers > 0),
+  full_name         text not null,
+  email             text not null,
+  phone             text not null,
+  special_requests  text not null default '',
+  status            text not null default 'new' check (status in ('new','contacted')),
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now()
+);
+
+create index if not exists booking_requests_status_idx on public.booking_requests (status);
+create index if not exists booking_requests_created_at_idx on public.booking_requests (created_at desc);
+
+drop trigger if exists booking_requests_set_updated_at on public.booking_requests;
+create trigger booking_requests_set_updated_at
+  before update on public.booking_requests
+  for each row execute function public.set_updated_at();
+
+alter table public.booking_requests enable row level security;
+
+-- Admins only — no public select/insert/delete policy at all.
+drop policy if exists "admins read booking requests" on public.booking_requests;
+create policy "admins read booking requests" on public.booking_requests
+  for select using (public.is_admin());
+
+drop policy if exists "admins update booking requests" on public.booking_requests;
+create policy "admins update booking requests" on public.booking_requests
+  for update using (public.is_admin()) with check (public.is_admin());
+
+-- 6. Booking request rate limiting --------------------------------------------
+-- Server-side throttle mirroring website/supabase/schema.sql's
+-- contact_messages_rate_limit(): blocks a repeat insert for the same
+-- email+package within 5 minutes (scoped to the package, not just the email,
+-- so requesting quotes on two different packages back-to-back is never
+-- blocked — that's normal, desirable behavior on a travel site), and caps
+-- total inserts to 10 per minute. SECURITY DEFINER so it fires for every
+-- role, including service_role (which bypasses RLS but not triggers) — real
+-- defense-in-depth even though the API rate-limits too.
+create or replace function public.booking_requests_rate_limit()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if exists (
+    select 1 from public.booking_requests
+    where email = new.email
+      and package_id = new.package_id
+      and created_at > now() - interval '5 minutes'
+  ) then
+    raise exception 'rate_limited: wait a few minutes before requesting this package again';
+  end if;
+
+  if (
+    select count(*) from public.booking_requests
+    where created_at > now() - interval '1 minute'
+  ) >= 10 then
+    raise exception 'rate_limited: too many booking requests right now, try again shortly';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_booking_requests_rate_limit on public.booking_requests;
+create trigger trg_booking_requests_rate_limit
+  before insert on public.booking_requests
+  for each row execute function public.booking_requests_rate_limit();
+
 -- ============================================================================
 -- AFTER RUNNING THIS SQL:
 --
