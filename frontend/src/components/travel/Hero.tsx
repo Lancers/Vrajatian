@@ -7,6 +7,12 @@ import { Button } from "src/components/ui/button"
 import { Input } from "src/components/ui/input"
 
 const ROTATING_WORDS = ["Timeless Heritage", "Hidden Backwaters", "Himalayan Peaks", "Sun-Soaked Beaches"]
+const BACKGROUND_IMAGES = [
+  "https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=1920&q=80", // Heritage
+  "https://images.unsplash.com/photo-1593693397690-362cb9666fc2?auto=format&fit=crop&w=1920&q=80", // Backwaters
+  "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1920&q=80", // Peaks
+  "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80", // Beaches
+]
 
 interface HeroProps {
   regions: string[]
@@ -42,11 +48,17 @@ function Hero({ regions }: HeroProps) {
 
   return (
     <section className="relative overflow-hidden py-28 sm:py-32">
-      <img
-        src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1920&q=80"
-        alt="Scenic travel destination"
-        className="absolute inset-0 h-full w-full object-cover"
-      />
+      {BACKGROUND_IMAGES.map((img, idx) => (
+        <img
+          key={img}
+          src={img}
+          alt="Scenic travel destination"
+          className={cn(
+            "absolute inset-0 h-full w-full object-cover transition-opacity duration-1000",
+            wordIndex === idx ? "opacity-100" : "opacity-0"
+          )}
+        />
+      ))}
       <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/50 to-background" />
 
       <div className="container relative z-10 mx-auto px-4">
@@ -88,7 +100,7 @@ function Hero({ regions }: HeroProps) {
 
         <form
           onSubmit={handleSearch}
-          className="mt-12 flex flex-col gap-4 rounded-2xl border border-white/10 bg-card/95 p-6 shadow-2xl backdrop-blur sm:mt-14 sm:flex-row sm:items-end sm:gap-6"
+          className="glass-panel mt-12 flex flex-col gap-4 rounded-2xl p-6 shadow-2xl sm:mt-14 sm:flex-row sm:items-end sm:gap-6 transition-all duration-300 hover:border-primary/40 hover:shadow-[0_0_30px_-4px_color-mix(in_oklch,var(--primary)_25%,transparent)]"
         >
           <div className="flex-1 space-y-1.5">
             <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">

@@ -1,0 +1,16 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule } from './common/config/config.module';
+import { SupabaseModule } from './common/supabase/supabase.module';
+import { CacheModule } from './common/cache/cache.module';
+import { AdminGuard } from './common/auth/admin.guard';
+import { AdminSessionController } from './common/auth/admin-session.controller';
+import { HealthController } from './health/health.controller';
+import { PackagesModule } from './modules/packages/packages.module';
+import { BookingRequestsModule } from './modules/booking-requests/booking-requests.module';
+
+@Module({
+  imports: [ConfigModule, SupabaseModule, CacheModule, PackagesModule, BookingRequestsModule],
+  controllers: [HealthController, AdminSessionController],
+  providers: [AdminGuard],
+})
+export class AppModule {}

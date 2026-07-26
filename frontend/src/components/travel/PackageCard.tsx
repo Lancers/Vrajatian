@@ -1,14 +1,13 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { Link } from "react-router-dom"
 import { ArrowRight, Clock, Heart, MapPin, Star, Users } from "lucide-react"
 
-import { cn } from "src/lib/utils"
+import { cn, formatDuration } from "src/lib/utils"
 import type { TravelPackage } from "src/lib/data/packages"
 
 function formatPrice(price: number) {
   return `₹${price.toLocaleString("en-IN")}`
 }
-
 
 interface PackageCardProps {
   pkg: TravelPackage
@@ -16,17 +15,59 @@ interface PackageCardProps {
 
 function PackageCard({ pkg }: PackageCardProps) {
   const [liked, setLiked] = useState(false)
+  const cardRef = useRef<HTMLAnchorElement>(null)
+  const [transformStyle, setTransformStyle] = useState("")
+  const [sheenStyle, setSheenStyle] = useState({ opacity: 0, x: 50, y: 50 })
 
   function handleLike(e: React.MouseEvent) {
     e.preventDefault()
     setLiked((prev) => !prev)
   }
 
+  function handleMouseMove(e: React.MouseEvent<HTMLAnchorElement>) {
+    if (!cardRef.current) return
+    const card = cardRef.current
+    const rect = card.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+
+    // Calculate rotation angles (-2.5 to 2.5 degrees for subtle luxury effect)
+    const centerX = rect.width / 2
+    const centerY = rect.height / 2
+    const rotateX = ((centerY - y) / centerY) * 2.5
+    const rotateY = ((x - centerX) / centerX) * 2.5
+
+    setTransformStyle(`perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.01, 1.01, 1.01)`)
+    setSheenStyle({
+      opacity: 0.05,
+      x: (x / rect.width) * 100,
+      y: (y / rect.height) * 100,
+    })
+  }
+
+  function handleMouseLeave() {
+    setTransformStyle("perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)")
+    setSheenStyle({ opacity: 0, x: 50, y: 50 })
+  }
+
   return (
     <Link
-      to={`/destinations/${pkg.id}`}
-      className="group relative flex h-[420px] flex-col justify-end overflow-hidden rounded-2xl border shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+      ref={cardRef}
+      to={`/destinations/${pkg.slug}`}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{ transform: transformStyle }}
+      className="group relative flex h-[420px] flex-col justify-end overflow-hidden rounded-2xl border shadow-sm transition-all duration-200 ease-out hover:shadow-xl [transform-style:preserve-3d] select-none"
     >
+      {/* Light Sheen Overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none transition-opacity duration-300 z-20"
+        style={{
+          background: `radial-gradient(circle at ${sheenStyle.x}% ${sheenStyle.y}%, rgba(255, 255, 255, 0.4) 0%, transparent 80%)`,
+          opacity: sheenStyle.opacity,
+        }}
+      />
+
       <img
         src={pkg.image}
         alt={pkg.title}
@@ -39,14 +80,14 @@ function PackageCard({ pkg }: PackageCardProps) {
         onClick={handleLike}
         aria-label="Add to wishlist"
         className={cn(
-          "absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white backdrop-blur transition-colors hover:bg-red-500/30",
+          "absolute right-4 top-4 z-30 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white backdrop-blur transition-colors hover:bg-red-500/30",
           liked && "bg-red-500/30 text-red-400"
         )}
       >
         <Heart size={16} fill={liked ? "currentColor" : "none"} />
       </button>
 
-      <div className="absolute left-4 right-4 top-4 flex items-center justify-between">
+      <div className="absolute left-4 right-4 top-4 z-30 flex items-center justify-between">
         <span className="flex items-center gap-1 rounded-full border border-white/10 bg-black/40 px-3 py-1 text-xs font-bold text-white backdrop-blur">
           <MapPin size={12} className="text-sky-300" />
           {pkg.location}
@@ -57,7 +98,7 @@ function PackageCard({ pkg }: PackageCardProps) {
         </span>
       </div>
 
-      <div className="relative z-10 flex flex-col gap-4 p-5 text-white">
+      <div className="relative z-10 flex flex-col gap-4 p-5 text-white [transform:translateZ(12px)]">
         <div>
           <h3 className="mb-1.5 text-xl font-bold leading-tight transition-colors group-hover:text-sky-300">
             {pkg.title}
@@ -67,7 +108,7 @@ function PackageCard({ pkg }: PackageCardProps) {
 
         <div className="flex flex-wrap items-center gap-2">
           <span className="flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold">
-            <Clock size={12} /> {pkg.duration.split(",")[0]}
+            <Clock size={12} /> {formatDuration(pkg.duration).split(",")[0]}
           </span>
           <span className="flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold">
             <Users size={12} /> {pkg.groupSize} Max
@@ -89,3 +130,4 @@ function PackageCard({ pkg }: PackageCardProps) {
 }
 
 export default PackageCard
+

@@ -1,8 +1,8 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { toast } from "sonner"
-import { CheckCircle2, CreditCard, Mail, Phone, ShieldCheck, User } from "lucide-react"
+import { CheckCircle2, Mail, MessageCircle, Phone, User } from "lucide-react"
 
-import { cn } from "src/lib/utils"
+import { cn, formatDateDDMMYYYY } from "src/lib/utils"
 import { Button } from "src/components/ui/button"
 import {
   Dialog,
@@ -14,6 +14,7 @@ import { Input } from "src/components/ui/input"
 import { Label } from "src/components/ui/label"
 import { Textarea } from "src/components/ui/textarea"
 import type { TravelPackage } from "src/lib/data/packages"
+import { createBookingRequest } from "src/lib/data/booking-requests"
 
 function formatPrice(price: number) {
   return `₹${price.toLocaleString("en-IN")}`
@@ -26,9 +27,8 @@ interface FormState {
   email: string
   phone: string
   specialRequests: string
-  cardNumber: string
-  cardExpiry: string
-  cardCvc: string
+  /** Honeypot — real users never see or fill this. Non-empty means a bot. */
+  website: string
 }
 
 const INITIAL_FORM: FormState = {
@@ -38,9 +38,27 @@ const INITIAL_FORM: FormState = {
   email: "",
   phone: "",
   specialRequests: "",
-  cardNumber: "",
-  cardExpiry: "",
-  cardCvc: "",
+  website: "",
+}
+
+const MIN_FILL_MS = 3_000 // reject a submit faster than a human could plausibly fill the form
+
+function buildWhatsAppUrl(pkg: TravelPackage, form: FormState, totalCost: number): string | null {
+  const number = import.meta.env.VITE_WHATSAPP_NUMBER as string | undefined
+  if (!number) return null
+
+  const message = [
+    `New Booking Request – ${pkg.title}`,
+    `Name: ${form.fullName}`,
+    `Phone: ${form.phone}`,
+    `Email: ${form.email}`,
+    `Departure Date: ${formatDateDDMMYYYY(form.startDate)}`,
+    `Travelers: ${form.travelers}`,
+    `Estimated Total: ${formatPrice(totalCost)}`,
+    `Special Requests: ${form.specialRequests || "None"}`,
+  ].join("\n")
+
+  return `https://wa.me/${number}?text=${encodeURIComponent(message)}`
 }
 
 interface BookingWizardProps {
@@ -53,8 +71,16 @@ function BookingWizard({ pkg, open, onOpenChange }: BookingWizardProps) {
   const [step, setStep] = useState(1)
   const [form, setForm] = useState<FormState>(INITIAL_FORM)
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
+  const [submitting, setSubmitting] = useState(false)
+  const [formLoadedAt, setFormLoadedAt] = useState(Date.now())
+  const [whatsappUrl, setWhatsappUrl] = useState<string | null>(null)
 
   const totalCost = pkg.price * form.travelers
+
+  // Restart the min-fill-time timer every time the dialog is (re)opened.
+  useEffect(() => {
+    if (open) setFormLoadedAt(Date.now())
+  }, [open])
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -71,10 +97,6 @@ function BookingWizard({ pkg, open, onOpenChange }: BookingWizardProps) {
       if (!form.email.trim()) next.email = "Email address is required"
       else if (!/\S+@\S+\.\S+/.test(form.email)) next.email = "Please provide a valid email"
       if (!form.phone.trim()) next.phone = "Phone number is required"
-    } else if (current === 3) {
-      if (form.cardNumber.length < 16) next.cardNumber = "Provide a valid 16-digit card number"
-      if (!/^\d{2}\/\d{2}$/.test(form.cardExpiry)) next.cardExpiry = "Expiry date must be MM/YY"
-      if (form.cardCvc.length < 3) next.cardCvc = "Provide a valid 3-digit CVV"
     }
     setErrors(next)
     return Object.keys(next).length === 0
@@ -88,13 +110,38 @@ function BookingWizard({ pkg, open, onOpenChange }: BookingWizardProps) {
     setStep((s) => Math.max(1, s - 1))
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!validateStep(3)) return
-    setStep(4)
-    toast.success("Trip booked!", {
-      description: `Your reservation for ${pkg.title} is confirmed.`,
-    })
+    if (!validateStep(2)) return
+
+    if (Date.now() - formLoadedAt < MIN_FILL_MS) {
+      toast.error("Please take a moment to review your details before sending.")
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      await createBookingRequest({
+        packageId: pkg.id,
+        startDate: form.startDate,
+        travelers: form.travelers,
+        fullName: form.fullName,
+        email: form.email,
+        phone: form.phone,
+        specialRequests: form.specialRequests,
+        website: form.website,
+      })
+
+      const url = buildWhatsAppUrl(pkg, form, totalCost)
+      setWhatsappUrl(url)
+      if (url) window.open(url, "_blank", "noopener,noreferrer")
+
+      setStep(3)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not send your request. Please try again.")
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   function handleClose(next: boolean) {
@@ -102,6 +149,7 @@ function BookingWizard({ pkg, open, onOpenChange }: BookingWizardProps) {
       setStep(1)
       setForm(INITIAL_FORM)
       setErrors({})
+      setWhatsappUrl(null)
     }
     onOpenChange(next)
   }
@@ -109,10 +157,10 @@ function BookingWizard({ pkg, open, onOpenChange }: BookingWizardProps) {
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-lg">
-        {step < 4 && (
+        {step < 3 && (
           <DialogHeader>
             <div className="mb-2 flex items-center justify-center gap-2">
-              {[1, 2, 3].map((n) => (
+              {[1, 2].map((n) => (
                 <div
                   key={n}
                   className={cn(
@@ -162,7 +210,7 @@ function BookingWizard({ pkg, open, onOpenChange }: BookingWizardProps) {
                 <span>{formatPrice(pkg.price)}</span>
               </div>
               <div className="mt-2 flex justify-between border-t pt-2 text-base font-bold">
-                <span>Total cost:</span>
+                <span>Estimated total:</span>
                 <span className="text-primary">{formatPrice(totalCost)}</span>
               </div>
             </div>
@@ -173,7 +221,7 @@ function BookingWizard({ pkg, open, onOpenChange }: BookingWizardProps) {
         )}
 
         {step === 2 && (
-          <div className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="fullName">Full Name</Label>
               <div className="relative">
@@ -230,108 +278,70 @@ function BookingWizard({ pkg, open, onOpenChange }: BookingWizardProps) {
                 onChange={(e) => update("specialRequests", e.target.value)}
               />
             </div>
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={handleBack} className="flex-1">
-                Back
-              </Button>
-              <Button onClick={handleNext} className="flex-1">
-                Continue
-              </Button>
-            </div>
-          </div>
-        )}
 
-        {step === 3 && (
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm text-emerald-600 dark:text-emerald-400">
-              <ShieldCheck size={18} />
-              <span>Simulated sandbox payment. No real currency is charged.</span>
+            {/* Honeypot — hidden from sighted users and screen readers alike. Bots that
+                auto-fill forms by field name/id often populate this; real users never will. */}
+            <div className="absolute -left-[9999px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
+              <Label htmlFor="website">Website</Label>
+              <Input
+                id="website"
+                name="website"
+                tabIndex={-1}
+                autoComplete="off"
+                value={form.website}
+                onChange={(e) => update("website", e.target.value)}
+              />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="cardNumber">Card Number</Label>
-              <div className="relative">
-                <CreditCard className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="cardNumber"
-                  placeholder="4111 2222 3333 4444"
-                  maxLength={16}
-                  className="pl-9"
-                  value={form.cardNumber}
-                  onChange={(e) => update("cardNumber", e.target.value.replace(/\D/g, ""))}
-                />
-              </div>
-              {errors.cardNumber && <p className="text-sm text-destructive">{errors.cardNumber}</p>}
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="cardExpiry">Expiration Date</Label>
-                <Input
-                  id="cardExpiry"
-                  placeholder="MM/YY"
-                  maxLength={5}
-                  value={form.cardExpiry}
-                  onChange={(e) => {
-                    let val = e.target.value.replace(/\D/g, "")
-                    if (val.length > 2) val = `${val.slice(0, 2)}/${val.slice(2, 4)}`
-                    update("cardExpiry", val)
-                  }}
-                />
-                {errors.cardExpiry && <p className="text-sm text-destructive">{errors.cardExpiry}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="cardCvc">CVV / CVC</Label>
-                <Input
-                  id="cardCvc"
-                  type="password"
-                  placeholder="123"
-                  maxLength={3}
-                  value={form.cardCvc}
-                  onChange={(e) => update("cardCvc", e.target.value.replace(/\D/g, ""))}
-                />
-                {errors.cardCvc && <p className="text-sm text-destructive">{errors.cardCvc}</p>}
-              </div>
-            </div>
-            <div className="flex items-center justify-between border-t pt-4">
-              <span className="text-sm font-medium text-muted-foreground">Amount Due:</span>
-              <span className="text-xl font-black">{formatPrice(totalCost)}</span>
-            </div>
+
             <div className="flex gap-3">
-              <Button type="button" variant="outline" onClick={handleBack} className="flex-1">
+              <Button type="button" variant="outline" onClick={handleBack} className="flex-1" disabled={submitting}>
                 Back
               </Button>
-              <Button type="submit" className="flex-1">
-                Confirm Payment
+              <Button type="submit" className="flex-1" disabled={submitting}>
+                {submitting ? "Sending…" : "Send Request"}
               </Button>
             </div>
           </form>
         )}
 
-        {step === 4 && (
+        {step === 3 && (
           <div className="flex flex-col items-center gap-4 py-4 text-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-emerald-500 bg-emerald-500/10 text-emerald-500">
               <CheckCircle2 size={32} />
             </div>
-            <h2 className="text-2xl font-black">Trip Booked!</h2>
+            <h2 className="text-2xl font-black">Request Sent!</h2>
             <p className="max-w-sm text-muted-foreground">
-              Thank you, <strong>{form.fullName}</strong>. Your reservation for <strong>{pkg.title}</strong> has been
-              logged in pending status.
+              Thank you, <strong>{form.fullName}</strong>. Your request for <strong>{pkg.title}</strong> has been
+              logged. Our team will reach out on WhatsApp shortly to confirm availability and arrange payment.
             </p>
             <div className="w-full space-y-1 rounded-lg border bg-muted/40 p-4 text-left text-sm">
               <div>
                 <span className="text-muted-foreground">Departure Date: </span>
-                <strong>{form.startDate}</strong>
+                <strong>{formatDateDDMMYYYY(form.startDate)}</strong>
               </div>
               <div>
                 <span className="text-muted-foreground">Travellers: </span>
                 <strong>{form.travelers}</strong>
               </div>
               <div>
-                <span className="text-muted-foreground">Total Paid: </span>
+                <span className="text-muted-foreground">Estimated Total: </span>
                 <strong className="text-emerald-500">{formatPrice(totalCost)}</strong>
               </div>
             </div>
-            <Button onClick={() => handleClose(false)} className="w-full">
-              Awesome, Got it
+            {whatsappUrl && (
+              <Button asChild className="w-full gap-2">
+                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                  <MessageCircle className="h-4 w-4" />
+                  Open WhatsApp
+                </a>
+              </Button>
+            )}
+            <Button
+              onClick={() => handleClose(false)}
+              variant={whatsappUrl ? "outline" : "default"}
+              className="w-full"
+            >
+              {whatsappUrl ? "Close" : "Awesome, Got it"}
             </Button>
           </div>
         )}

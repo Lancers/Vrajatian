@@ -11,6 +11,8 @@ import Contact from "src/pages/Contact"
 import MyBookings from "src/pages/MyBookings"
 import NotFound from "src/pages/NotFound"
 import AdminDashboard from "src/pages/admin/AdminDashboard"
+import AdminTripRequests from "src/pages/admin/AdminTripRequests"
+import AdminPackages from "src/pages/admin/AdminPackages"
 import LoginPage from "src/pages/auth/Login"
 import SignupForm from "src/pages/auth/Register"
 
@@ -21,7 +23,7 @@ function App() {
         <Route element={<RootLayout />}>
           <Route index element={<Home />} />
           <Route path="destinations" element={<Destinations />} />
-          <Route path="destinations/:packageId" element={<DestinationDetail />} />
+          <Route path="destinations/:slug" element={<DestinationDetail />} />
           <Route path="plan-trip" element={<TripCustomizer />} />
           <Route path="contact" element={<Contact />} />
           <Route path="my-bookings" element={<MyBookings />} />
@@ -29,6 +31,8 @@ function App() {
         <Route path="*" element={<NotFound />} />
         <Route path="admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
+          <Route path="trip-requests" element={<AdminTripRequests />} />
+          <Route path="packages" element={<AdminPackages />} />
         </Route>
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<SignupForm />} />

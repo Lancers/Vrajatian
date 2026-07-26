@@ -1,17 +1,14 @@
 import { useState } from "react"
-import { LayoutDashboard, Users, Luggage, ClipboardList, MessageSquare, Settings, Moon, Sun, Search, Compass } from "lucide-react"
+import { Link } from "react-router-dom"
+import { LayoutDashboard, ClipboardList, Settings, Moon, Sun, Search, Compass } from "lucide-react"
 import { useTheme } from "next-themes"
 import { Input } from "src/components/ui/input"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger } from "src/components/ui/sidebar"
 
 const menu = [
-  { title: "Dashboard", icon: LayoutDashboard },
-  { title: "Trip Requests", icon: ClipboardList },
-  { title: "Clients", icon: Users },
-  { title: "Packages", icon: Compass },
-  { title: "Bookings", icon: Luggage },
-  { title: "Messages", icon: MessageSquare },
-  { title: "Settings", icon: Settings },
+  { title: "Dashboard", icon: LayoutDashboard, path: "/admin" },
+  { title: "Trip Request", icon: ClipboardList, path: "/admin/trip-requests" },
+  { title: "Packages", icon: Compass, path: "/admin/packages" },
 ]
 
 export function AppSidebar() {
@@ -69,14 +66,18 @@ export function AppSidebar() {
 
               {filteredMenu.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton className="h-auto items-start py-2">
-
-                    <item.icon className="mt-0.5 shrink-0" />
-
-                    <span className="!overflow-visible">
-                      {item.title}
-                    </span>
-
+                  <SidebarMenuButton className="h-auto items-start py-2" asChild={!!item.path}>
+                    {item.path ? (
+                      <Link to={item.path}>
+                        <item.icon className="mt-0.5 shrink-0" />
+                        <span className="!overflow-visible">{item.title}</span>
+                      </Link>
+                    ) : (
+                      <>
+                        <item.icon className="mt-0.5 shrink-0" />
+                        <span className="!overflow-visible">{item.title}</span>
+                      </>
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -91,6 +92,18 @@ export function AppSidebar() {
 
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarMenuItem>
+
+            <SidebarMenuButton>
+
+              <Settings />
+
+              <span>Settings</span>
+
+            </SidebarMenuButton>
+
+          </SidebarMenuItem>
+
           <SidebarMenuItem>
 
             <SidebarMenuButton onClick={() => setTheme(dark ? "light" : "dark")}>

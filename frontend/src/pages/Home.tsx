@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, Compass } from "lucide-react"
 
 import { Button } from "src/components/ui/button"
 import Hero from "src/components/travel/Hero"
@@ -14,16 +14,24 @@ import Newsletter from "src/components/travel/Newsletter"
 import PackageCard from "src/components/travel/PackageCard"
 import { getPackages, type TravelPackage } from "src/lib/data/packages"
 import { ScrollReveal } from "src/components/common/ScrollReveal"
+import CustomizerPromo from "src/components/travel/CustomizerPromo"
 
 function Home() {
   const [packages, setPackages] = useState<TravelPackage[]>([])
 
   useEffect(() => {
-    setPackages(getPackages())
+    getPackages()
+      .then((pkgs) => setPackages(pkgs))
+      .catch(() => setPackages([]))
   }, [])
 
   const regions = Array.from(new Set(packages.map((p) => p.region)))
-  const featured = [...packages].sort((a, b) => b.rating - a.rating).slice(0, 3)
+
+  // Featured vacations
+  const featuredPackages = useMemo(() => {
+    const flagged = packages.filter((p) => p.isFeatured)
+    return flagged.length > 0 ? flagged : [...packages].sort((a, b) => b.rating - a.rating).slice(0, 6)
+  }, [packages])
 
   return (
     <div className="space-y-0">
@@ -43,8 +51,8 @@ function Home() {
 
       <ScrollReveal variant="slide-up" duration={800}>
         <section className="py-20 sm:py-24">
-          <div className="container mx-auto px-4">
-            <div className="mb-12 flex flex-wrap items-end justify-between gap-6">
+          <div className="container mx-auto px-4 space-y-12">
+            <div className="flex flex-wrap items-end justify-between gap-6">
               <div>
                 <span className="mb-2 inline-block text-sm font-extrabold uppercase tracking-[3px] text-primary">
                   Explore Packages
@@ -54,20 +62,37 @@ function Home() {
                   Handpicked trips across India&apos;s most breathtaking destinations.
                 </p>
               </div>
-              <Button asChild variant="outline" className="gap-2">
-                <Link to="/destinations">
-                  View All Destinations <ArrowRight size={16} />
-                </Link>
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button asChild variant="outline" className="gap-2">
+                  <Link to="/destinations">
+                    View All Destinations <ArrowRight size={16} />
+                  </Link>
+                </Button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {featured.map((pkg) => (
-                <PackageCard key={pkg.id} pkg={pkg} />
-              ))}
-            </div>
+            {/* Vacation Cards Grid */}
+            {featuredPackages.length === 0 ? (
+              <div className="rounded-2xl border border-dashed py-16 text-center">
+                <Compass size={40} className="mx-auto mb-4 animate-spin text-muted-foreground [animation-duration:6s]" />
+                <h4 className="font-bold text-base mb-1">No Vacation Packages Found</h4>
+                <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+                  We are working on bringing new custom tours shortly. Check out other zones!
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {featuredPackages.map((pkg) => (
+                  <PackageCard key={pkg.id} pkg={pkg} />
+                ))}
+              </div>
+            )}
           </div>
         </section>
+      </ScrollReveal>
+      
+      <ScrollReveal variant="slide-up" duration={900}>
+        <CustomizerPromo />
       </ScrollReveal>
 
       <ScrollReveal variant="flip-up" duration={1000}>
