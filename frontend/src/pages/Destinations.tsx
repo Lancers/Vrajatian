@@ -17,6 +17,12 @@ function Destinations() {
   const [query, setQuery] = useState(searchParams.get("q") ?? "")
   const [region, setRegion] = useState(searchParams.get("region") ?? "All")
   const [maxPrice, setMaxPrice] = useState(searchParams.get("maxPrice") ?? "")
+  const [difficulty, setDifficulty] = useState("All")
+  const [sortBy, setSortBy] = useState("rating-desc")
+
+  const maxPriceLimit = useMemo(() => {
+    return packages.length > 0 ? Math.max(...packages.map((p) => p.price)) : 150000
+  }, [packages])
 
   useEffect(() => {
     getPackages()
@@ -28,7 +34,7 @@ function Destinations() {
   const regions = useMemo(() => Array.from(new Set(packages.map((p) => p.region))), [packages])
 
   const filtered = useMemo(() => {
-    return packages.filter((pkg) => {
+    const res = packages.filter((pkg) => {
       const q = query.toLowerCase()
       const matchesQuery =
         !q ||
@@ -37,14 +43,30 @@ function Destinations() {
         pkg.description.toLowerCase().includes(q)
       const matchesRegion = region === "All" || pkg.region === region
       const matchesPrice = !maxPrice || pkg.price <= Number(maxPrice)
-      return matchesQuery && matchesRegion && matchesPrice
+      const matchesDifficulty = difficulty === "All" || pkg.difficulty === difficulty
+      return matchesQuery && matchesRegion && matchesPrice && matchesDifficulty
     })
-  }, [packages, query, region, maxPrice])
+
+    if (sortBy === "price-asc") {
+      res.sort((a, b) => a.price - b.price)
+    } else if (sortBy === "price-desc") {
+      res.sort((a, b) => b.price - a.price)
+    } else if (sortBy === "rating-desc") {
+      res.sort((a, b) => b.rating - a.rating)
+    } else if (sortBy === "duration-asc") {
+      const getDays = (str: string) => parseInt(str) || 0
+      res.sort((a, b) => getDays(a.duration) - getDays(b.duration))
+    }
+
+    return res
+  }, [packages, query, region, maxPrice, difficulty, sortBy])
 
   function resetFilters() {
     setQuery("")
     setRegion("All")
     setMaxPrice("")
+    setDifficulty("All")
+    setSortBy("rating-desc")
   }
 
   return (
@@ -57,44 +79,113 @@ function Destinations() {
         <p className="mt-2 text-muted-foreground">Explore highly rated travel experiences across India.</p>
       </div>
 
-      <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center">
-        <Input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search destinations..."
-          className="sm:max-w-xs"
-        />
-        <Input
-          type="number"
-          min="0"
-          value={maxPrice}
-          onChange={(e) => setMaxPrice(e.target.value)}
-          placeholder="Max budget (₹)"
-          className="sm:max-w-[180px]"
-        />
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setRegion("All")}
-            className={cn(
-              "rounded-full border px-4 py-1.5 text-sm font-semibold transition-colors",
-              region === "All" ? "border-primary bg-primary text-primary-foreground" : "hover:bg-accent"
-            )}
-          >
-            All
-          </button>
-          {regions.map((r) => (
+      <div className="mb-8 rounded-2xl border bg-card p-6 shadow-sm">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 lg:items-end">
+          {/* Search Bar */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Search</label>
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search destinations..."
+              className="w-full"
+            />
+          </div>
+
+          {/* Budget Slider */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              <span>Budget Limit</span>
+              <span className="text-primary font-semibold">
+                Under ₹{(Number(maxPrice) || maxPriceLimit).toLocaleString("en-IN")}
+              </span>
+            </div>
+            <input
+              type="range"
+              min="10000"
+              max={maxPriceLimit}
+              step="5000"
+              value={maxPrice || maxPriceLimit}
+              onChange={(e) => setMaxPrice(e.target.value)}
+              className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-muted accent-primary focus:outline-none"
+            />
+          </div>
+
+          {/* Difficulty Toggles */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Difficulty</label>
+            <div className="flex gap-1">
+              {["All", "Easy", "Medium", "Hard"].map((diff) => (
+                <button
+                  key={diff}
+                  type="button"
+                  onClick={() => setDifficulty(diff)}
+                  className={cn(
+                    "flex-1 rounded-lg border py-1.5 text-xs font-bold transition-all",
+                    difficulty === diff
+                      ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                      : "bg-background text-muted-foreground hover:bg-accent hover:text-foreground"
+                  )}
+                >
+                  {diff}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Sort Selector */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Sort By</label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="flex h-10 w-full cursor-pointer rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <option value="rating-desc">Highest Rated ★</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="duration-asc">Duration: Short to Long</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Region Filter Row */}
+        <div className="mt-6 border-t pt-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground mr-2">Region:</span>
             <button
-              key={r}
-              onClick={() => setRegion(r)}
+              onClick={() => setRegion("All")}
               className={cn(
-                "rounded-full border px-4 py-1.5 text-sm font-semibold transition-colors",
-                region === r ? "border-primary bg-primary text-primary-foreground" : "hover:bg-accent"
+                "rounded-full border px-4 py-1.5 text-xs font-semibold transition-colors",
+                region === "All" ? "border-primary bg-primary/10 text-primary" : "hover:bg-accent"
               )}
             >
-              {r}
+              All Regions
             </button>
-          ))}
+            {regions.map((r) => (
+              <button
+                key={r}
+                onClick={() => setRegion(r)}
+                className={cn(
+                  "rounded-full border px-4 py-1.5 text-xs font-semibold transition-colors",
+                  region === r ? "border-primary bg-primary/10 text-primary" : "hover:bg-accent"
+                )}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
         </div>
+      </div>
+
+      {/* Showing count */}
+      <div className="mb-6 flex items-center justify-between text-sm text-muted-foreground">
+        <span>Showing {filtered.length} of {packages.length} vacations</span>
+        {(query || region !== "All" || maxPrice || difficulty !== "All" || sortBy !== "rating-desc") && (
+          <button onClick={resetFilters} className="text-xs text-primary font-semibold hover:underline">
+            Clear All Filters
+          </button>
+        )}
       </div>
 
       {loading ? (

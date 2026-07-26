@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
-import { MapPin, ShieldCheck, Users } from "lucide-react"
+import { MapPin, ShieldCheck, Users, Car, Compass, Hotel, Mountain, Eye } from "lucide-react"
 
 import {
   Breadcrumb,
@@ -19,6 +19,15 @@ import { formatDuration } from "src/lib/utils"
 
 function formatPrice(price: number) {
   return `₹${price.toLocaleString("en-IN")}`
+}
+
+function getItineraryIcon(title: string, desc: string) {
+  const text = `${title} ${desc}`.toLowerCase()
+  if (text.includes("drive") || text.includes("transfer") || text.includes("road")) return Car
+  if (text.includes("hotel") || text.includes("stay") || text.includes("check-in") || text.includes("resort") || text.includes("camp")) return Hotel
+  if (text.includes("trek") || text.includes("hike") || text.includes("climb") || text.includes("peak") || text.includes("mountain")) return Mountain
+  if (text.includes("sightseeing") || text.includes("explore") || text.includes("visit") || text.includes("tour") || text.includes("temple")) return Eye
+  return Compass
 }
 
 function DestinationDetail() {
@@ -131,18 +140,40 @@ function DestinationDetail() {
               <TabsTrigger value="itinerary">Itinerary</TabsTrigger>
               <TabsTrigger value="inclusions">What&apos;s Included</TabsTrigger>
             </TabsList>
-            <TabsContent value="itinerary" className="space-y-6">
-              {pkg.itinerary.map((item) => (
-                <div key={item.day} className="flex gap-4">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-primary text-sm font-bold text-primary">
-                    {item.day}
+            <TabsContent value="itinerary" className="relative space-y-8 pl-4 pt-2">
+              {/* Vertical timeline line */}
+              <div className="absolute left-[34px] top-6 bottom-6 w-0.5 bg-border/60 pointer-events-none" />
+
+              {pkg.itinerary.map((item) => {
+                const TripIcon = getItineraryIcon(item.title, item.description)
+                return (
+                  <div key={item.day} className="group relative flex gap-6 items-start transition-all duration-300">
+                    {/* Glowing timeline dot indicator */}
+                    <div className="z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-primary bg-background text-sm font-black text-primary transition-all duration-300 group-hover:border-primary group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-[0_0_15px_-2px_color-mix(in_oklch,var(--primary)_60%,transparent)]">
+                      {item.day}
+                    </div>
+
+                    <div className="flex-1 rounded-2xl border bg-card p-5 shadow-sm transition-all duration-300 hover:border-primary/30 hover:shadow-md hover:bg-card/85 flex flex-col sm:flex-row gap-4 sm:items-start">
+                      <div className="flex-1 space-y-1">
+                        <span className="text-[10px] font-black uppercase text-primary/70 tracking-widest block">
+                          Day {item.day} Itinerary
+                        </span>
+                        <h4 className="font-bold text-base text-foreground group-hover:text-primary transition-colors">
+                          {item.title}
+                        </h4>
+                        <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                          {item.description}
+                        </p>
+                      </div>
+
+                      {/* Transit/Activity category icon indicator */}
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted/60 border border-transparent text-muted-foreground group-hover:bg-primary/10 group-hover:border-primary/20 group-hover:text-primary transition-all duration-300">
+                        <TripIcon className="h-5 w-5" />
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="mb-1 font-bold">{item.title}</h4>
-                    <p className="text-sm text-muted-foreground">{item.description}</p>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </TabsContent>
             <TabsContent value="inclusions">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

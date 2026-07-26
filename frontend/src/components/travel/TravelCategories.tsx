@@ -30,7 +30,7 @@ const CATEGORIES = [
   {
     title: "Spiritual Journeys",
     description: "Experience the historic ghats and temples of Varanasi.",
-    image: "https://images.unsplash.com/photo-1561361513-2d000a50f0db?auto=format&fit=crop&w=800&q=80",
+    image: "/images/spiritual_journey.jpg",
     icon: Sparkles,
     color: "from-purple-500/20 to-pink-500/20 text-purple-500 dark:text-purple-400",
     route: "/destinations?region=Uttar+Pradesh",
@@ -46,7 +46,7 @@ const CATEGORIES = [
   {
     title: "Cultural Expeditions",
     description: "Explore local artisan crafts and the Rann desert.",
-    image: "https://images.unsplash.com/photo-1601922046210-9edb2b4c9d8e?auto=format&fit=crop&w=800&q=80",
+    image: "/images/cultural_expedition.jpg",
     icon: Sunset,
     color: "from-yellow-500/20 to-amber-600/20 text-yellow-600 dark:text-yellow-400",
     route: "/destinations?region=Gujarat",

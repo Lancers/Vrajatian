@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 import { ArrowRight, Compass, HelpCircle, RefreshCw } from "lucide-react"
 
@@ -71,6 +71,14 @@ function TravelQuiz() {
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [matchedPkg, setMatchedPkg] = useState<TravelPackage | null>(null)
   const [packages, setPackages] = useState<TravelPackage[]>([])
+  const [matchPercent, setMatchPercent] = useState(0)
+
+  const loadMessage = useMemo(() => {
+    if (matchPercent < 25) return "Calibrating travel vibe..."
+    if (matchPercent < 55) return "Scanning active routes..."
+    if (matchPercent < 80) return "Calculating budget fits..."
+    return "Crafting custom itinerary..."
+  }, [matchPercent])
 
   useEffect(() => {
     getPackages()
@@ -86,6 +94,17 @@ function TravelQuiz() {
       setStep((prev) => prev + 1)
     } else {
       setStep(QUESTIONS.length + 1) // Set loading step
+      setMatchPercent(0)
+
+      const interval = setInterval(() => {
+        setMatchPercent((p) => {
+          if (p >= 100) {
+            clearInterval(interval)
+            return 100
+          }
+          return p + 4
+        })
+      }, 60)
 
       setTimeout(() => {
         const vibe = updatedAnswers["vibe"]
@@ -109,7 +128,7 @@ function TravelQuiz() {
 
         setMatchedPkg(match)
         setStep(QUESTIONS.length + 2) // Result step
-      }, 1200)
+      }, 1600)
     }
   }
 
@@ -199,12 +218,25 @@ function TravelQuiz() {
 
             {/* Step 4: Loading Screen */}
             {step === QUESTIONS.length + 1 && (
-              <CardContent className="flex flex-col items-center justify-center py-20 text-center">
-                <RefreshCw className="mb-6 h-12 w-12 animate-spin text-primary" />
-                <h3 className="mb-2 text-xl font-bold">Analyzing Your Travel Vibe...</h3>
-                <p className="text-sm text-muted-foreground">
-                  Matching with over 200+ high-rated packages across India.
-                </p>
+              <CardContent className="flex flex-col items-center justify-center py-16 text-center space-y-6">
+                <div
+                  className="relative flex items-center justify-center h-24 w-24 rounded-full border bg-primary/5 transition-transform duration-75"
+                  style={{ transform: `rotate(${matchPercent * 7.2}deg)` }}
+                >
+                  <Compass className="h-12 w-12 text-primary" />
+                </div>
+                <div className="w-full max-w-[240px] bg-muted h-2 rounded-full overflow-hidden">
+                  <div
+                    className="bg-primary h-full transition-all duration-75"
+                    style={{ width: `${matchPercent}%` }}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-xl font-bold">{matchPercent}%</h3>
+                  <p className="text-sm text-muted-foreground transition-all duration-200">
+                    {loadMessage}
+                  </p>
+                </div>
               </CardContent>
             )}
 
