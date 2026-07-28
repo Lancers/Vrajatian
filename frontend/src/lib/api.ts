@@ -4,10 +4,13 @@ import { supabase } from "src/lib/supabase"
  * Base URL of the Vrajatian backend API (NestJS). Override with VITE_API_URL.
  * All package data now flows through this API — the browser no longer talks to
  * the Postgres tables directly. Supabase is still used for auth (login/session).
+ *
+ * Defaults to a same-origin relative path — correct for the Vercel deployment,
+ * where the backend is served from /api/v1 on the same domain as the frontend.
+ * Local dev overrides this via VITE_API_URL in frontend/.env.local (the
+ * backend runs on a different port there, so it can't be same-origin).
  */
-const API_BASE =
-  (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ??
-  "http://localhost:3000/api/v1"
+const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "/api/v1"
 
 /** Attach the logged-in admin's Supabase access token for guarded endpoints. */
 async function authHeader(): Promise<Record<string, string>> {
