@@ -12,6 +12,8 @@ const schema = z.object({
   SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   PACKAGE_IMAGE_BUCKET: z.string().default('package-images'),
+  GROQ_API_KEY: z.string().min(1),
+  GROQ_MODEL: z.string().default('llama-3.1-8b-instant'),
 });
 
 export type AppConfig = z.infer<typeof schema> & { corsOrigins: string[] };

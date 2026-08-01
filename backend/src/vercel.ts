@@ -4,6 +4,7 @@ import type { Request, Response } from 'express';
 import express from 'express';
 import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { AppConfig, CONFIG } from './common/config/config';
 
@@ -25,6 +26,7 @@ async function init(): Promise<void> {
   const app = await NestFactory.create(AppModule, new ExpressAdapter(server));
   const config = app.get<AppConfig>(CONFIG);
 
+  app.use(helmet());
   app.setGlobalPrefix('api/v1');
   app.enableCors({
     origin: config.corsOrigins,
