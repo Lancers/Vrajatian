@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { Logger } from '@nestjs/common';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { AppConfig, CONFIG } from './common/config/config';
 
@@ -9,6 +10,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config = app.get<AppConfig>(CONFIG);
 
+  app.use(helmet());
   app.setGlobalPrefix('api/v1');
   app.enableCors({
     origin: config.corsOrigins,

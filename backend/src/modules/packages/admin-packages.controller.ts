@@ -46,7 +46,7 @@ export class AdminPackagesController {
   }
 
   @Post()
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(FileInterceptor('image', { limits: { fileSize: MAX_IMAGE_BYTES } }))
   create(
     @Body() body: Record<string, unknown>,
     @UploadedFile() image?: Express.Multer.File,
@@ -57,7 +57,7 @@ export class AdminPackagesController {
   }
 
   @Patch(':id')
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(FileInterceptor('image', { limits: { fileSize: MAX_IMAGE_BYTES } }))
   update(
     @Param('id') id: string,
     @Body() body: Record<string, unknown>,

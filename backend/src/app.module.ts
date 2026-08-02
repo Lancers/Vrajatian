@@ -7,9 +7,10 @@ import { AdminSessionController } from './common/auth/admin-session.controller';
 import { HealthController } from './health/health.controller';
 import { PackagesModule } from './modules/packages/packages.module';
 import { BookingRequestsModule } from './modules/booking-requests/booking-requests.module';
+import { ChatModule } from './modules/chat/chat.module';
 
 @Module({
-  imports: [ConfigModule, SupabaseModule, CacheModule, PackagesModule, BookingRequestsModule],
+  imports: [ConfigModule, SupabaseModule, CacheModule, PackagesModule, BookingRequestsModule, ChatModule],
   controllers: [HealthController, AdminSessionController],
   providers: [AdminGuard],
 })
