@@ -18,17 +18,22 @@ export interface PackageRow {
   rating: number | string | null;
   location: string;
   region: string;
-  difficulty: 'Easy' | 'Medium' | 'Hard';
+  type: 'trip' | 'activity' | 'education' | 'corporate';
+  difficulty: 'Easy' | 'Medium' | 'Hard' | null;
   group_size: number;
   is_featured: boolean;
+  special_request_allowed: boolean;
   inclusions: string[] | null;
+  exclusions: string[] | null;
   itinerary: { day: number; title: string; description: string }[] | null;
+  tiers: { name: 'Basic' | 'Value' | 'Deluxe'; price: number; description: string }[] | null;
   status: 'draft' | 'published';
 }
 
 const SELECT_COLS =
   'id, slug, title, description, cover_image_path, price, duration, rating, ' +
-  'location, region, difficulty, group_size, is_featured, inclusions, itinerary, status';
+  'location, region, type, difficulty, group_size, is_featured, special_request_allowed, ' +
+  'inclusions, exclusions, itinerary, tiers, status';
 
 function slugify(value: string): string {
   return value
@@ -55,16 +60,14 @@ export class PackagesRepository {
     return this.db.storage.from(this.supabase.bucket).getPublicUrl(path).data.publicUrl;
   }
 
-  async listPublished(): Promise<PackageRow[]> {
-    const cacheKey = `${PUBLIC_CACHE_PREFIX}published`;
+  async listPublished(type?: string): Promise<PackageRow[]> {
+    const cacheKey = `${PUBLIC_CACHE_PREFIX}published:${type ?? 'all'}`;
     const cached = this.cache.get<PackageRow[]>(cacheKey);
     if (cached) return cached;
 
-    const { data, error } = await this.db
-      .from('packages')
-      .select(SELECT_COLS)
-      .eq('status', 'published')
-      .order('created_at', { ascending: false });
+    let query = this.db.from('packages').select(SELECT_COLS).eq('status', 'published');
+    if (type) query = query.eq('type', type);
+    const { data, error } = await query.order('created_at', { ascending: false });
     if (error) throw error;
 
     const rows = (data ?? []) as unknown as PackageRow[];
@@ -72,11 +75,10 @@ export class PackagesRepository {
     return rows;
   }
 
-  async listAll(): Promise<PackageRow[]> {
-    const { data, error } = await this.db
-      .from('packages')
-      .select(SELECT_COLS)
-      .order('created_at', { ascending: false });
+  async listAll(type?: string): Promise<PackageRow[]> {
+    let query = this.db.from('packages').select(SELECT_COLS);
+    if (type) query = query.eq('type', type);
+    const { data, error } = await query.order('created_at', { ascending: false });
     if (error) throw error;
     return (data ?? []) as unknown as PackageRow[];
   }
@@ -143,11 +145,15 @@ export class PackagesRepository {
       rating: input.rating,
       location: input.location,
       region: input.region,
-      difficulty: input.difficulty,
+      type: input.type,
+      difficulty: input.difficulty ?? null,
       group_size: input.groupSize,
       is_featured: input.isFeatured,
+      special_request_allowed: input.specialRequestAllowed,
       inclusions: input.inclusions,
+      exclusions: input.exclusions,
       itinerary: input.itinerary,
+      tiers: input.tiers,
       status: input.status,
     };
 
@@ -186,11 +192,15 @@ export class PackagesRepository {
       rating: input.rating,
       location: input.location,
       region: input.region,
-      difficulty: input.difficulty,
+      type: input.type,
+      difficulty: input.difficulty ?? null,
       group_size: input.groupSize,
       is_featured: input.isFeatured,
+      special_request_allowed: input.specialRequestAllowed,
       inclusions: input.inclusions,
+      exclusions: input.exclusions,
       itinerary: input.itinerary,
+      tiers: input.tiers,
       status: input.status,
     };
     if (newCoverImagePath) record.cover_image_path = newCoverImagePath;

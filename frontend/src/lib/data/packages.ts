@@ -6,6 +6,14 @@ export interface ItineraryDay {
   description: string
 }
 
+export interface PackageTier {
+  name: "Basic" | "Value" | "Deluxe"
+  price: number
+  description: string
+}
+
+export type PackageType = "trip" | "activity" | "education" | "corporate"
+
 export interface TravelPackage {
   id: string
   slug: string
@@ -17,11 +25,15 @@ export interface TravelPackage {
   rating: number
   location: string
   region: string
-  difficulty: "Easy" | "Medium" | "Hard"
+  type: PackageType
+  difficulty: "Easy" | "Medium" | "Hard" | null
   groupSize: number
   isFeatured: boolean
+  specialRequestAllowed: boolean
   inclusions: string[]
+  exclusions: string[]
   itinerary: ItineraryDay[]
+  tiers: PackageTier[]
   status: "draft" | "published"
 }
 
@@ -32,12 +44,16 @@ export interface NewPackageInput {
   duration: string
   location: string
   region: string
-  difficulty: TravelPackage["difficulty"]
+  type: PackageType
+  difficulty?: TravelPackage["difficulty"]
   groupSize: number
   rating: number
   isFeatured: boolean
+  specialRequestAllowed: boolean
   inclusions: string[]
+  exclusions: string[]
   itinerary: ItineraryDay[]
+  tiers: PackageTier[]
   status: TravelPackage["status"]
 }
 
@@ -50,20 +66,25 @@ function toFormData(input: NewPackageInput, imageFile?: File | null): FormData {
   fd.append("duration", input.duration)
   fd.append("location", input.location)
   fd.append("region", input.region)
-  fd.append("difficulty", input.difficulty)
+  fd.append("type", input.type)
+  if (input.difficulty) fd.append("difficulty", input.difficulty)
   fd.append("groupSize", String(input.groupSize))
   fd.append("rating", String(input.rating))
   fd.append("isFeatured", String(input.isFeatured))
+  fd.append("specialRequestAllowed", String(input.specialRequestAllowed))
   fd.append("inclusions", JSON.stringify(input.inclusions))
+  fd.append("exclusions", JSON.stringify(input.exclusions))
   fd.append("itinerary", JSON.stringify(input.itinerary))
+  fd.append("tiers", JSON.stringify(input.tiers))
   fd.append("status", input.status)
   if (imageFile) fd.append("image", imageFile)
   return fd
 }
 
-/** Published packages only — used by every public-facing page. */
-export async function getPackages(): Promise<TravelPackage[]> {
-  return api.get<TravelPackage[]>("/packages")
+/** Published packages only — used by every public-facing page. Optionally filtered by type. */
+export async function getPackages(opts?: { type?: PackageType }): Promise<TravelPackage[]> {
+  const query = opts?.type ? `?type=${encodeURIComponent(opts.type)}` : ""
+  return api.get<TravelPackage[]>(`/packages${query}`)
 }
 
 /** A single published package by slug, or null. */
@@ -72,8 +93,9 @@ export async function getPackageBySlug(slug: string): Promise<TravelPackage | nu
 }
 
 /** Every package incl. drafts — admin only (the API enforces admin access). */
-export async function getAllPackages(): Promise<TravelPackage[]> {
-  return api.getAuthed<TravelPackage[]>("/admin/packages")
+export async function getAllPackages(opts?: { type?: PackageType }): Promise<TravelPackage[]> {
+  const query = opts?.type ? `?type=${encodeURIComponent(opts.type)}` : ""
+  return api.getAuthed<TravelPackage[]>(`/admin/packages${query}`)
 }
 
 /** Create a package with its cover image. */

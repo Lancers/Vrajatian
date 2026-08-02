@@ -18,18 +18,22 @@ export class PackagesService {
       rating: row.rating == null ? 0 : Number(row.rating),
       location: row.location,
       region: row.region,
+      type: row.type,
       difficulty: row.difficulty,
       groupSize: row.group_size,
       isFeatured: row.is_featured,
+      specialRequestAllowed: row.special_request_allowed,
       inclusions: row.inclusions ?? [],
+      exclusions: row.exclusions ?? [],
       itinerary: row.itinerary ?? [],
+      tiers: row.tiers ?? [],
       status: row.status,
     };
   }
 
   // ── Public ──────────────────────────────────────────────────────────────
-  async listPublished(): Promise<PackageResponse[]> {
-    return (await this.repo.listPublished()).map((r) => this.toResponse(r));
+  async listPublished(type?: string): Promise<PackageResponse[]> {
+    return (await this.repo.listPublished(type)).map((r) => this.toResponse(r));
   }
 
   async getPublishedBySlug(slug: string): Promise<PackageResponse> {
@@ -46,8 +50,8 @@ export class PackagesService {
   }
 
   // ── Admin ───────────────────────────────────────────────────────────────
-  async listAll(): Promise<PackageResponse[]> {
-    return (await this.repo.listAll()).map((r) => this.toResponse(r));
+  async listAll(type?: string): Promise<PackageResponse[]> {
+    return (await this.repo.listAll(type)).map((r) => this.toResponse(r));
   }
 
   async create(input: PackageInput, image: Express.Multer.File): Promise<PackageResponse> {

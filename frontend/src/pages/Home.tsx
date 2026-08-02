@@ -4,7 +4,7 @@ import { ArrowRight, Compass } from "lucide-react"
 
 import { Button } from "src/components/ui/button"
 import Hero from "src/components/travel/Hero"
-import TravelCategories from "src/components/travel/TravelCategories"
+import TravelActivities from "src/components/travel/TravelActivities"
 import WhyChooseUs from "src/components/travel/WhyChooseUs"
 import HowItWorks from "src/components/travel/HowItWorks"
 import TravelQuiz from "src/components/travel/TravelQuiz"
@@ -38,7 +38,7 @@ function Home() {
       <Hero regions={regions} />
 
       <ScrollReveal variant="blur-in" duration={900}>
-        <TravelCategories />
+        <TravelActivities />
       </ScrollReveal>
 
       <ScrollReveal variant="slide-up" duration={800}>

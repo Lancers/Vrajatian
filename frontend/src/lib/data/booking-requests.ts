@@ -14,6 +14,17 @@ export interface BookingRequestInput {
   captchaToken?: string
 }
 
+/**
+ * One traveler's name/age, added by an admin after confirming with the
+ * customer — never collected on the public booking form. Kept as a single
+ * object so future fields (e.g. an ID document) are just another optional
+ * key here, not another migration.
+ */
+export interface TravelerDetail {
+  name: string
+  age?: number
+}
+
 export interface BookingRequest {
   id: string
   packageId: string | null
@@ -26,6 +37,7 @@ export interface BookingRequest {
   phone: string
   specialRequests: string
   status: "new" | "contacted"
+  travelerDetails: TravelerDetail[]
   createdAt: string
 }
 
@@ -42,4 +54,28 @@ export async function getAllBookingRequests(): Promise<BookingRequest[]> {
 /** Mark a booking request as contacted. */
 export async function markBookingRequestContacted(id: string): Promise<BookingRequest> {
   return api.patchAuthed<BookingRequest>(`/admin/booking-requests/${id}/contacted`, {})
+}
+
+export interface BookingRequestUpdate {
+  startDate?: string
+  travelers?: number
+  fullName?: string
+  email?: string
+  phone?: string
+  specialRequests?: string
+  status?: "new" | "contacted"
+  travelerDetails?: TravelerDetail[]
+}
+
+/** Edit a booking request's customer-submitted fields and/or status. */
+export async function updateBookingRequest(
+  id: string,
+  patch: BookingRequestUpdate,
+): Promise<BookingRequest> {
+  return api.patchAuthed<BookingRequest>(`/admin/booking-requests/${id}`, patch)
+}
+
+/** Permanently delete a booking request. */
+export async function deleteBookingRequest(id: string): Promise<void> {
+  await api.del(`/admin/booking-requests/${id}`)
 }

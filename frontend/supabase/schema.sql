@@ -15,17 +15,40 @@ create table if not exists public.packages (
   rating           numeric(2,1) default 4.8,
   location         text not null,
   region           text not null,
-  difficulty       text not null default 'Easy' check (difficulty in ('Easy','Medium','Hard')),
+  difficulty       text check (difficulty in ('Easy','Medium','Hard')),
   group_size       int  not null default 10,
   inclusions       jsonb not null default '[]'::jsonb,
+  exclusions       jsonb not null default '[]'::jsonb,
   itinerary        jsonb not null default '[]'::jsonb,
   status           text not null default 'draft' check (status in ('draft','published')),
   is_featured      boolean not null default false,
+  type             text not null default 'trip' check (type in ('trip','activity','education','corporate')),
+  special_request_allowed boolean not null default true,
+  tiers            jsonb not null default '[]'::jsonb,  -- [{ name: 'Basic'|'Value'|'Deluxe', price: number, description?: string }]
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now()
 );
 
+-- Additive migration for databases where public.packages already existed
+-- before the columns above were introduced (CREATE TABLE IF NOT EXISTS is a
+-- no-op on an existing table, so these ALTERs are what actually apply on a
+-- re-run against a live database).
+alter table public.packages add column if not exists exclusions jsonb not null default '[]'::jsonb;
+alter table public.packages add column if not exists type text not null default 'trip';
+alter table public.packages add column if not exists special_request_allowed boolean not null default true;
+alter table public.packages add column if not exists tiers jsonb not null default '[]'::jsonb;
+
+alter table public.packages alter column difficulty drop not null;
+alter table public.packages drop constraint if exists packages_difficulty_check;
+alter table public.packages add constraint packages_difficulty_check
+  check (difficulty is null or difficulty in ('Easy','Medium','Hard'));
+
+alter table public.packages drop constraint if exists packages_type_check;
+alter table public.packages add constraint packages_type_check
+  check (type in ('trip','activity','education','corporate'));
+
 create index if not exists packages_status_idx on public.packages (status);
+create index if not exists packages_type_idx on public.packages (type);
 
 create or replace function public.set_updated_at()
 returns trigger language plpgsql as $$
@@ -113,9 +136,16 @@ create table if not exists public.booking_requests (
   phone             text not null,
   special_requests  text not null default '',
   status            text not null default 'new' check (status in ('new','contacted')),
+  -- Individual traveler names/ages, added by admin after confirming with the
+  -- customer (not collected on the public booking form). [{ name, age? }]
+  traveler_details  jsonb not null default '[]'::jsonb,
   created_at        timestamptz not null default now(),
   updated_at        timestamptz not null default now()
 );
+
+-- Additive migration for databases where public.booking_requests already
+-- existed before this column was introduced.
+alter table public.booking_requests add column if not exists traveler_details jsonb not null default '[]'::jsonb;
 
 create index if not exists booking_requests_status_idx on public.booking_requests (status);
 create index if not exists booking_requests_created_at_idx on public.booking_requests (created_at desc);
@@ -135,6 +165,19 @@ create policy "admins read booking requests" on public.booking_requests
 drop policy if exists "admins update booking requests" on public.booking_requests;
 create policy "admins update booking requests" on public.booking_requests
   for update using (public.is_admin()) with check (public.is_admin());
+
+-- Defense-in-depth: the backend deletes via the service-role key (bypasses
+-- RLS), but every other table has explicit policies for every action it
+-- supports, so this keeps booking_requests consistent now that admins can
+-- delete trip requests from the admin panel.
+drop policy if exists "admins delete booking requests" on public.booking_requests;
+create policy "admins delete booking requests" on public.booking_requests
+  for delete using (public.is_admin());
+
+-- Change history / versioning was tried and dropped as overkill for this
+-- table — if an earlier run of this script created booking_request_versions,
+-- clean it up (no real data ever depended on it).
+drop table if exists public.booking_request_versions cascade;
 
 -- 6. Booking request rate limiting --------------------------------------------
 -- Server-side throttle mirroring website/supabase/schema.sql's

@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Get, Param } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Param, Query } from '@nestjs/common';
 import { PackagesService } from './packages.service';
 import { PackageResponse } from './package.dto';
 
@@ -12,8 +12,8 @@ export class PackagesController {
   constructor(private readonly packages: PackagesService) {}
 
   @Get()
-  list(): Promise<PackageResponse[]> {
-    return this.packages.listPublished();
+  list(@Query('type') type?: string): Promise<PackageResponse[]> {
+    return this.packages.listPublished(type);
   }
 
   @Get(':slug')

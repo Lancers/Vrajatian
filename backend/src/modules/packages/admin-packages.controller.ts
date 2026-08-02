@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -41,8 +42,8 @@ export class AdminPackagesController {
   constructor(private readonly packages: PackagesService) {}
 
   @Get()
-  listAll(): Promise<PackageResponse[]> {
-    return this.packages.listAll();
+  listAll(@Query('type') type?: string): Promise<PackageResponse[]> {
+    return this.packages.listAll(type);
   }
 
   @Post()
