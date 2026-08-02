@@ -11,6 +11,10 @@ const RECENT_LIMIT = 5
 
 function AdminDashboard() {
   const { packages, bookingRequests: tripRequests } = useAdminData()
+  // "Packages" below and its "View all" link only cover /admin/packages
+  // (type === 'trip') — Activities/Educational/Corporate each have their own
+  // tab, so the recent-list here is scoped to match where that link goes.
+  const tripPackages = packages.filter((pkg) => pkg.type === "trip")
 
   const stats = [
     { label: "Trip Requests", value: String(tripRequests.length), icon: ClipboardList },
@@ -84,26 +88,26 @@ function AdminDashboard() {
 
       <div className={cn("rounded-lg border bg-card shadow-sm")}>
         <div className={cn("flex items-center justify-between p-4 border-b")}>
-          <h2 className={cn("font-semibold")}>Packages</h2>
+          <h2 className={cn("font-semibold")}>Trip Packages</h2>
           <Link to="/admin/packages" className="text-xs text-primary hover:underline">
             View all
           </Link>
         </div>
         <div className="divide-y">
-          {packages.length === 0 ? (
-            <p className="p-6 text-center text-sm text-muted-foreground">No packages in the catalog yet.</p>
+          {tripPackages.length === 0 ? (
+            <p className="p-6 text-center text-sm text-muted-foreground">No trip packages in the catalog yet.</p>
           ) : (
-            packages.slice(0, RECENT_LIMIT).map((pkg) => (
-              <div key={pkg.id} className="flex items-center gap-3 p-4">
+            tripPackages.slice(0, RECENT_LIMIT).map((pkg) => (
+              <div key={pkg.id} className="flex flex-wrap items-center gap-3 p-4">
                 {pkg.image ? (
-                  <img src={pkg.image} alt={pkg.title} className="h-12 w-12 rounded-md object-cover" />
+                  <img src={pkg.image} alt={pkg.title} className="h-12 w-12 shrink-0 rounded-md object-cover" />
                 ) : (
-                  <div className="flex h-12 w-12 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
                     <Luggage className="h-5 w-5" />
                   </div>
                 )}
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold">{pkg.title}</span>
                     <StatusBadge label={pkg.status} tone={pkg.status === "published" ? "positive" : "neutral"} />
                     {pkg.isFeatured && <StatusBadge label="featured" tone="accent" />}

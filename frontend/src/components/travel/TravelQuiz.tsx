@@ -62,7 +62,7 @@ const VIBE_KEYWORDS: Record<string, string[]> = {
 function matchesVibe(pkg: TravelPackage, vibe: string): boolean {
   const haystack = `${pkg.title} ${pkg.location} ${pkg.region} ${pkg.description}`.toLowerCase()
   const keywordHit = (VIBE_KEYWORDS[vibe] ?? []).some((k) => haystack.includes(k))
-  if (vibe === "adventure") return keywordHit || pkg.difficulty !== "Easy"
+  if (vibe === "adventure") return keywordHit || (!!pkg.difficulty && pkg.difficulty !== "Easy")
   return keywordHit
 }
 

@@ -14,11 +14,18 @@ import { Button } from "src/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "src/components/ui/tabs"
 import PackageCard from "src/components/travel/PackageCard"
 import BookingWizard from "src/components/travel/BookingWizard"
-import { getPackageBySlug, getPackages, type TravelPackage } from "src/lib/data/packages"
+import { getPackageBySlug, getPackages, type PackageType, type TravelPackage } from "src/lib/data/packages"
 import { formatDuration } from "src/lib/utils"
 
 function formatPrice(price: number) {
   return `₹${price.toLocaleString("en-IN")}`
+}
+
+const TYPE_LISTING: Record<PackageType, { basePath: string; label: string }> = {
+  trip: { basePath: "/destinations", label: "Destinations" },
+  activity: { basePath: "/activities", label: "Activities" },
+  education: { basePath: "/educational-trips", label: "Educational Trips" },
+  corporate: { basePath: "/corporate-trips", label: "Corporate Trips" },
 }
 
 function getItineraryIcon(title: string, desc: string) {
@@ -30,13 +37,19 @@ function getItineraryIcon(title: string, desc: string) {
   return Compass
 }
 
-function DestinationDetail() {
+interface DestinationDetailProps {
+  type?: PackageType
+}
+
+function DestinationDetail({ type = "trip" }: DestinationDetailProps) {
   const { slug } = useParams()
   const navigate = useNavigate()
   const [pkg, setPkg] = useState<TravelPackage | null>(null)
   const [loading, setLoading] = useState(true)
   const [packages, setPackages] = useState<TravelPackage[]>([])
   const [bookingOpen, setBookingOpen] = useState(false)
+
+  const listing = TYPE_LISTING[type]
 
   // The package itself comes from the by-slug endpoint; the full list is only
   // needed for the "similar destinations" row below.
@@ -49,13 +62,13 @@ function DestinationDetail() {
       .then((found) => {
         if (cancelled) return
         if (!found) {
-          navigate("/destinations", { replace: true })
+          navigate(listing.basePath, { replace: true })
           return
         }
         setPkg(found)
       })
       .catch(() => {
-        if (!cancelled) navigate("/destinations", { replace: true })
+        if (!cancelled) navigate(listing.basePath, { replace: true })
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -64,13 +77,13 @@ function DestinationDetail() {
     return () => {
       cancelled = true
     }
-  }, [slug, navigate])
+  }, [slug, navigate, listing.basePath])
 
   useEffect(() => {
-    getPackages()
+    getPackages({ type })
       .then((pkgs) => setPackages(pkgs))
       .catch(() => setPackages([]))
-  }, [])
+  }, [type])
 
   if (loading) {
     return (
@@ -90,7 +103,7 @@ function DestinationDetail() {
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link to="/destinations">Destinations</Link>
+              <Link to={listing.basePath}>{listing.label}</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
@@ -129,16 +142,33 @@ function DestinationDetail() {
               <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Group limit</div>
               <div className="font-semibold">{pkg.groupSize} Travellers</div>
             </div>
-            <div className="border-t pt-4 sm:border-l sm:border-t-0 sm:pl-8 sm:pt-0">
-              <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Difficulty</div>
-              <div className="font-semibold">{pkg.difficulty}</div>
-            </div>
+            {pkg.difficulty && (
+              <div className="border-t pt-4 sm:border-l sm:border-t-0 sm:pl-8 sm:pt-0">
+                <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Difficulty</div>
+                <div className="font-semibold">{pkg.difficulty}</div>
+              </div>
+            )}
           </div>
+
+          {pkg.tiers.length > 0 && (
+            <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+              {pkg.tiers.map((tier) => (
+                <div key={tier.name} className="rounded-xl border bg-card p-5">
+                  <div className="text-xs font-bold uppercase tracking-wide text-primary">{tier.name}</div>
+                  <div className="mt-1 text-2xl font-black">{formatPrice(tier.price)}</div>
+                  {tier.description && (
+                    <p className="mt-1 text-sm text-muted-foreground">{tier.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
 
           <Tabs defaultValue="itinerary">
             <TabsList>
               <TabsTrigger value="itinerary">Itinerary</TabsTrigger>
               <TabsTrigger value="inclusions">What&apos;s Included</TabsTrigger>
+              <TabsTrigger value="exclusions">What&apos;s Excluded</TabsTrigger>
             </TabsList>
             <TabsContent value="itinerary" className="relative space-y-8 pl-4 pt-2">
               {/* Vertical timeline line */}
@@ -176,14 +206,32 @@ function DestinationDetail() {
               })}
             </TabsContent>
             <TabsContent value="inclusions">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {pkg.inclusions.map((item) => (
-                  <div key={item} className="flex items-center gap-2 text-sm">
-                    <span className="font-bold text-emerald-500">✓</span>
-                    <span>{item}</span>
-                  </div>
-                ))}
-              </div>
+              {pkg.inclusions.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No inclusions listed for this package.</p>
+              ) : (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {pkg.inclusions.map((item) => (
+                    <div key={item} className="flex items-center gap-2 text-sm">
+                      <span className="font-bold text-emerald-500">✓</span>
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+            <TabsContent value="exclusions">
+              {pkg.exclusions.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No exclusions listed for this package.</p>
+              ) : (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {pkg.exclusions.map((item) => (
+                    <div key={item} className="flex items-center gap-2 text-sm">
+                      <span className="font-bold text-red-500">✕</span>
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </TabsContent>
           </Tabs>
 
@@ -222,10 +270,12 @@ function DestinationDetail() {
                 <Users size={14} /> {pkg.groupSize}
               </strong>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Difficulty:</span>
-              <strong>{pkg.difficulty}</strong>
-            </div>
+            {pkg.difficulty && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Difficulty:</span>
+                <strong>{pkg.difficulty}</strong>
+              </div>
+            )}
           </div>
 
           <Button size="lg" className="w-full" onClick={() => setBookingOpen(true)}>
@@ -236,6 +286,11 @@ function DestinationDetail() {
             <ShieldCheck size={14} className="text-emerald-500" />
             <span>Free cancellation up to 48 hours</span>
           </div>
+          {pkg.specialRequestAllowed && (
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              Special requests welcome — mention them in the booking form.
+            </p>
+          )}
         </div>
       </div>
 

@@ -3,10 +3,17 @@ import { Link } from "react-router-dom"
 import { ArrowRight, Clock, Heart, MapPin, Star, Users } from "lucide-react"
 
 import { cn, formatDuration } from "src/lib/utils"
-import type { TravelPackage } from "src/lib/data/packages"
+import type { PackageType, TravelPackage } from "src/lib/data/packages"
 
 function formatPrice(price: number) {
   return `₹${price.toLocaleString("en-IN")}`
+}
+
+const TYPE_BASE_PATH: Record<PackageType, string> = {
+  trip: "/destinations",
+  activity: "/activities",
+  education: "/educational-trips",
+  corporate: "/corporate-trips",
 }
 
 interface PackageCardProps {
@@ -53,7 +60,7 @@ function PackageCard({ pkg }: PackageCardProps) {
   return (
     <Link
       ref={cardRef}
-      to={`/destinations/${pkg.slug}`}
+      to={`${TYPE_BASE_PATH[pkg.type]}/${pkg.slug}`}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{ transform: transformStyle }}

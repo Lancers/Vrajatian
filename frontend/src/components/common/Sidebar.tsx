@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
-import { LayoutDashboard, ClipboardList, Settings, Moon, Sun, Search, Compass } from "lucide-react"
+import { LayoutDashboard, ClipboardList, Settings, Moon, Sun, Search, Compass, MountainSnow, GraduationCap, Building2 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { Input } from "src/components/ui/input"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger } from "src/components/ui/sidebar"
@@ -9,6 +9,9 @@ const menu = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/admin" },
   { title: "Trip Request", icon: ClipboardList, path: "/admin/trip-requests" },
   { title: "Packages", icon: Compass, path: "/admin/packages" },
+  { title: "Activities", icon: MountainSnow, path: "/admin/activities" },
+  { title: "Educational Trips", icon: GraduationCap, path: "/admin/educational-trips" },
+  { title: "Corporate Trips", icon: Building2, path: "/admin/corporate-trips" },
 ]
 
 export function AppSidebar() {

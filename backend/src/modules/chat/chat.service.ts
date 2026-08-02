@@ -58,7 +58,10 @@ export class ChatService {
       const pkgs = await this.packages.listPublished();
       context = pkgs
         .slice(0, MAX_PACKAGES_IN_CONTEXT)
-        .map((p) => `- ${p.title} (${p.location}, ${p.duration}, from ₹${p.price}, difficulty: ${p.difficulty})`)
+        .map((p) => {
+          const difficulty = p.difficulty ? `, difficulty: ${p.difficulty}` : '';
+          return `- ${p.title} (${p.location}, ${p.duration}, from ₹${p.price}${difficulty})`;
+        })
         .join('\n');
       this.cache.set(CONTEXT_CACHE_KEY, context, CONTEXT_CACHE_TTL_SECONDS);
     }

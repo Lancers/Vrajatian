@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../../common/supabase/supabase.service';
 import { PackagesService } from '../packages/packages.service';
-import { BookingRequestInput, BookingRequestResponse } from './booking-request.dto';
+import { BookingRequestInput, BookingRequestResponse, BookingRequestUpdate, TravelerDetail } from './booking-request.dto';
 
 interface BookingRequestRow {
   id: string;
@@ -16,12 +16,13 @@ interface BookingRequestRow {
   phone: string;
   special_requests: string | null;
   status: 'new' | 'contacted';
+  traveler_details: TravelerDetail[] | null;
   created_at: string;
 }
 
 const SELECT_COLS =
   'id, package_id, package_title, package_price, start_date, travelers, ' +
-  'full_name, email, phone, special_requests, status, created_at';
+  'full_name, email, phone, special_requests, status, traveler_details, created_at';
 
 /**
  * No separate repository layer here, unlike packages/ — this module is just
@@ -52,6 +53,7 @@ export class BookingRequestsService {
       phone: row.phone,
       specialRequests: row.special_requests ?? '',
       status: row.status,
+      travelerDetails: row.traveler_details ?? [],
       createdAt: row.created_at,
     };
   }
@@ -70,6 +72,7 @@ export class BookingRequestsService {
       phone: input.phone,
       specialRequests: input.specialRequests,
       status: 'new',
+      travelerDetails: [],
       createdAt: new Date().toISOString(),
     };
   }
@@ -138,5 +141,36 @@ export class BookingRequestsService {
     if (error) throw error;
     if (!data) throw new NotFoundException('Booking request not found.');
     return this.toResponse(data as unknown as BookingRequestRow);
+  }
+
+  async update(id: string, patch: BookingRequestUpdate): Promise<BookingRequestResponse> {
+    const record: Record<string, unknown> = {};
+    if (patch.startDate !== undefined) record.start_date = patch.startDate;
+    if (patch.travelers !== undefined) record.travelers = patch.travelers;
+    if (patch.fullName !== undefined) record.full_name = patch.fullName;
+    if (patch.email !== undefined) record.email = patch.email;
+    if (patch.phone !== undefined) record.phone = patch.phone;
+    if (patch.specialRequests !== undefined) record.special_requests = patch.specialRequests;
+    if (patch.status !== undefined) record.status = patch.status;
+    if (patch.travelerDetails !== undefined) record.traveler_details = patch.travelerDetails;
+
+    const { data, error } = await this.db
+      .from('booking_requests')
+      .update(record)
+      .eq('id', id)
+      .select(SELECT_COLS)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) throw new NotFoundException('Booking request not found.');
+    return this.toResponse(data as unknown as BookingRequestRow);
+  }
+
+  async remove(id: string): Promise<void> {
+    const { error, count } = await this.db
+      .from('booking_requests')
+      .delete({ count: 'exact' })
+      .eq('id', id);
+    if (error) throw error;
+    if (!count) throw new NotFoundException('Booking request not found.');
   }
 }

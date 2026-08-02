@@ -268,16 +268,18 @@ function BookingWizard({ pkg, open, onOpenChange }: BookingWizardProps) {
                 {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="specialRequests">Special Requests (Optional)</Label>
-              <Textarea
-                id="specialRequests"
-                rows={3}
-                placeholder="Dietary requests, room preferences, accessibility needs..."
-                value={form.specialRequests}
-                onChange={(e) => update("specialRequests", e.target.value)}
-              />
-            </div>
+            {pkg.specialRequestAllowed && (
+              <div className="space-y-2">
+                <Label htmlFor="specialRequests">Special Requests (Optional)</Label>
+                <Textarea
+                  id="specialRequests"
+                  rows={3}
+                  placeholder="Dietary requests, room preferences, accessibility needs..."
+                  value={form.specialRequests}
+                  onChange={(e) => update("specialRequests", e.target.value)}
+                />
+              </div>
+            )}
 
             {/* Honeypot — hidden from sighted users and screen readers alike. Bots that
                 auto-fill forms by field name/id often populate this; real users never will. */}
