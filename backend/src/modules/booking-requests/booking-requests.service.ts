@@ -2,7 +2,12 @@ import { randomUUID } from 'crypto';
 import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../../common/supabase/supabase.service';
 import { PackagesService } from '../packages/packages.service';
-import { BookingRequestInput, BookingRequestResponse } from './booking-request.dto';
+import {
+  AdminBookingStatusUpdateInput,
+  BookingRequestInput,
+  BookingRequestResponse,
+  BookingRequestStatus,
+} from './booking-request.dto';
 
 interface BookingRequestRow {
   id: string;
@@ -15,13 +20,16 @@ interface BookingRequestRow {
   email: string;
   phone: string;
   special_requests: string | null;
-  status: 'new' | 'contacted';
+  status: BookingRequestStatus;
+  user_id: string | null;
+  admin_note: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 const SELECT_COLS =
   'id, package_id, package_title, package_price, start_date, travelers, ' +
-  'full_name, email, phone, special_requests, status, created_at';
+  'full_name, email, phone, special_requests, status, user_id, admin_note, created_at, updated_at';
 
 /**
  * No separate repository layer here, unlike packages/ — this module is just
@@ -52,12 +60,16 @@ export class BookingRequestsService {
       phone: row.phone,
       specialRequests: row.special_requests ?? '',
       status: row.status,
+      userId: row.user_id,
+      adminNote: row.admin_note,
       createdAt: row.created_at,
+      updatedAt: row.updated_at,
     };
   }
 
   /** Honeypot caught it — pretend success without touching the DB or the bot gets a signal to adapt. */
   private fakeSuccessResponse(input: BookingRequestInput): BookingRequestResponse {
+    const now = new Date().toISOString();
     return {
       id: randomUUID(),
       packageId: input.packageId,
@@ -70,12 +82,20 @@ export class BookingRequestsService {
       phone: input.phone,
       specialRequests: input.specialRequests,
       status: 'new',
-      createdAt: new Date().toISOString(),
+      userId: null,
+      adminNote: null,
+      createdAt: now,
+      updatedAt: now,
     };
   }
 
   // ── Public ──────────────────────────────────────────────────────────────
-  async create(input: BookingRequestInput): Promise<BookingRequestResponse> {
+  /**
+   * `userId` comes from an optional bearer token the controller already
+   * verified (or null for a guest submission) — never from the request body,
+   * so a client can never link a request to someone else's account.
+   */
+  async create(input: BookingRequestInput, userId: string | null): Promise<BookingRequestResponse> {
     if (input.website) return this.fakeSuccessResponse(input);
 
     // TODO(CAPTCHA): once a Turnstile/reCAPTCHA site key exists, verify
@@ -95,6 +115,7 @@ export class BookingRequestsService {
       email: input.email,
       phone: input.phone,
       special_requests: input.specialRequests,
+      user_id: userId,
     };
 
     const { data, error } = await this.db
@@ -118,6 +139,16 @@ export class BookingRequestsService {
     return this.toResponse(data as unknown as BookingRequestRow);
   }
 
+  async listForUser(userId: string): Promise<BookingRequestResponse[]> {
+    const { data, error } = await this.db
+      .from('booking_requests')
+      .select(SELECT_COLS)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return ((data ?? []) as unknown as BookingRequestRow[]).map((r) => this.toResponse(r));
+  }
+
   // ── Admin ───────────────────────────────────────────────────────────────
   async listAll(): Promise<BookingRequestResponse[]> {
     const { data, error } = await this.db
@@ -128,10 +159,10 @@ export class BookingRequestsService {
     return ((data ?? []) as unknown as BookingRequestRow[]).map((r) => this.toResponse(r));
   }
 
-  async markContacted(id: string): Promise<BookingRequestResponse> {
+  async updateStatus(id: string, input: AdminBookingStatusUpdateInput): Promise<BookingRequestResponse> {
     const { data, error } = await this.db
       .from('booking_requests')
-      .update({ status: 'contacted' })
+      .update({ status: input.status, admin_note: input.adminNote ?? null })
       .eq('id', id)
       .select(SELECT_COLS)
       .maybeSingle();

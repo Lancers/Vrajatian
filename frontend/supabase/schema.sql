@@ -48,6 +48,57 @@ returns boolean language sql stable security definer set search_path = public as
   select exists (select 1 from public.admins where user_id = auth.uid());
 $$;
 
+-- 2b. User profiles -----------------------------------------------------------
+-- One row per auth.users row, created automatically on signup (see the
+-- handle_new_user trigger below). Holds the account-details a traveller edits
+-- on /profile — full_name/phone start out from signup metadata if provided.
+create table if not exists public.profiles (
+  id         uuid primary key references auth.users(id) on delete cascade,
+  email      text,
+  full_name  text,
+  phone      text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+drop trigger if exists profiles_set_updated_at on public.profiles;
+create trigger profiles_set_updated_at
+  before update on public.profiles
+  for each row execute function public.set_updated_at();
+
+create or replace function public.handle_new_user()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.profiles (id, email, full_name)
+  values (new.id, new.email, new.raw_user_meta_data ->> 'full_name')
+  on conflict (id) do nothing;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+alter table public.profiles enable row level security;
+
+drop policy if exists "users read own profile" on public.profiles;
+create policy "users read own profile" on public.profiles
+  for select using (auth.uid() = id);
+
+drop policy if exists "users update own profile" on public.profiles;
+create policy "users update own profile" on public.profiles
+  for update using (auth.uid() = id) with check (auth.uid() = id);
+
+drop policy if exists "users insert own profile" on public.profiles;
+create policy "users insert own profile" on public.profiles
+  for insert with check (auth.uid() = id);
+
+drop policy if exists "admins read all profiles" on public.profiles;
+create policy "admins read all profiles" on public.profiles
+  for select using (public.is_admin());
+
 -- 3. Row Level Security ------------------------------------------------------
 alter table public.packages enable row level security;
 alter table public.admins   enable row level security;
@@ -112,13 +163,23 @@ create table if not exists public.booking_requests (
   email             text not null,
   phone             text not null,
   special_requests  text not null default '',
-  status            text not null default 'new' check (status in ('new','contacted')),
+  status            text not null default 'new' check (status in ('new','contacted','confirmed','declined')),
+  user_id           uuid references auth.users(id) on delete set null,
+  admin_note        text,
   created_at        timestamptz not null default now(),
   updated_at        timestamptz not null default now()
 );
 
+-- Existing installs: widen the status constraint and add the new columns.
+alter table public.booking_requests add column if not exists user_id uuid references auth.users(id) on delete set null;
+alter table public.booking_requests add column if not exists admin_note text;
+alter table public.booking_requests drop constraint if exists booking_requests_status_check;
+alter table public.booking_requests add constraint booking_requests_status_check
+  check (status in ('new','contacted','confirmed','declined'));
+
 create index if not exists booking_requests_status_idx on public.booking_requests (status);
 create index if not exists booking_requests_created_at_idx on public.booking_requests (created_at desc);
+create index if not exists booking_requests_user_id_idx on public.booking_requests (user_id);
 
 drop trigger if exists booking_requests_set_updated_at on public.booking_requests;
 create trigger booking_requests_set_updated_at
@@ -189,4 +250,13 @@ create trigger trg_booking_requests_rate_limit
 --          insert into public.admins (user_id) values ('PASTE-ADMIN-UID-HERE');
 --
 --   4. In the app, log in at /login with that email + password to manage packages.
+--
+--   5. Authentication → Providers → Email → confirm "Confirm email" is ON
+--      (regular traveller signups at /register go through supabase.auth.signUp
+--      and rely on real email confirmation — admins created via step 2's
+--      "Auto Confirm User" checkbox intentionally skip this, travellers don't).
+--
+--   6. Authentication → URL Configuration → add /auth/callback as an allowed
+--      Redirect URL for both your local dev origin and the deployed domain
+--      (this is where the confirmation email link lands).
 -- ============================================================================
