@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
 import { Eye, EyeOff } from "lucide-react"
@@ -8,6 +8,7 @@ import { Apple } from "src/components/icons/apple"
 import { Google } from "src/components/icons/google"
 import { Meta } from "src/components/icons/meta"
 import { cn } from "src/lib/utils"
+import { supabase } from "src/lib/supabase"
 import { Button } from "src/components/ui/button"
 import { Card, CardContent } from "src/components/ui/card"
 import {
@@ -21,6 +22,7 @@ import { Input } from "src/components/ui/input"
 import { Label } from "src/components/ui/label"
 
 interface Touched {
+  fullName: boolean
   email: boolean
   password: boolean
   confirmPassword: boolean
@@ -57,6 +59,8 @@ export default function SignupForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  const navigate = useNavigate()
+  const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -64,9 +68,19 @@ export default function SignupForm({
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [touched, setTouched] = useState<Touched>({ email: false, password: false, confirmPassword: false })
+  const [touched, setTouched] = useState<Touched>({
+    fullName: false,
+    email: false,
+    password: false,
+    confirmPassword: false,
+  })
 
   const strength = useMemo(() => getPasswordStrength(password), [password])
+
+  const fullNameError = useMemo(() => {
+    if (!touched.fullName) return
+    return fullName.trim() ? undefined : "Full name is required"
+  }, [fullName, touched.fullName])
 
   const emailError = useMemo(() => {
     if (!touched.email) return
@@ -86,17 +100,19 @@ export default function SignupForm({
 
   const allValid = useMemo(
     () =>
+      fullName.trim() &&
       email &&
       password.length >= 8 &&
       confirmPassword === password &&
       terms &&
+      !fullNameError &&
       !emailError &&
       !passwordError &&
       !confirmPasswordError,
-    [email, password, confirmPassword, terms, emailError, passwordError, confirmPasswordError]
+    [fullName, email, password, confirmPassword, terms, fullNameError, emailError, passwordError, confirmPasswordError]
   )
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
     const eError = validateEmail(email)
@@ -107,16 +123,30 @@ export default function SignupForm({
         : confirmPassword !== password
           ? "Passwords do not match"
           : undefined
+    const nError = fullName.trim() ? undefined : "Full name is required"
 
-    setTouched({ email: true, password: true, confirmPassword: true })
+    setTouched({ fullName: true, email: true, password: true, confirmPassword: true })
 
-    if (eError || pError || cpError || !terms) return
+    if (eError || pError || cpError || nError || !terms) return
 
     setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
-      toast.success("Account created successfully!")
-    }, 1500)
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: { full_name: fullName.trim() },
+      },
+    })
+    setLoading(false)
+
+    if (error) {
+      toast.error(error.message || "Could not create your account. Please try again.")
+      return
+    }
+
+    toast.success("Check your email to confirm your account before logging in.")
+    navigate("/login")
   }
 
   return (
@@ -133,6 +163,27 @@ export default function SignupForm({
                       Enter your email below to create your account
                     </p>
                   </div>
+                  <Field>
+                    <FieldLabel htmlFor="fullName">Full Name</FieldLabel>
+                    <Input
+                      id="fullName"
+                      placeholder="Aarav Sharma"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      onBlur={() =>
+                        setTouched((prev: Touched) => ({ ...prev, fullName: true }))
+                      }
+                    />
+                    <div
+                      className={`grid transition-all duration-300 ${
+                        fullNameError ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                      }`}
+                    >
+                      <div className="overflow-hidden">
+                        <p className="text-sm text-red-600/80">{fullNameError}</p>
+                      </div>
+                    </div>
+                  </Field>
                   <Field>
                     <FieldLabel htmlFor="email">Email</FieldLabel>
                     <Input

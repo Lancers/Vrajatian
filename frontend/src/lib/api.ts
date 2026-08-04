@@ -59,6 +59,20 @@ export const api = {
     return handle(res) as Promise<T>
   },
 
+  /**
+   * Public JSON POST that also attaches a bearer token when one exists — for
+   * endpoints that never require login but should link the request to an
+   * account when the visitor happens to be signed in (e.g. booking requests).
+   */
+  async postOptionalAuth<T>(path: string, body: unknown): Promise<T> {
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeader()) },
+      body: JSON.stringify(body),
+    })
+    return handle(res) as Promise<T>
+  },
+
   /** Authenticated JSON PATCH (admin). */
   async patchAuthed<T>(path: string, body: unknown): Promise<T> {
     const res = await fetch(`${API_BASE}${path}`, {
