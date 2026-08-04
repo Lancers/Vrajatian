@@ -1,6 +1,5 @@
 import { useRef, useState } from "react"
-import { CheckCircle2, Download, Eye, Mail, Pencil, Phone, Plus, Trash2, X } from "lucide-react"
-import { toast } from "sonner"
+import { Download, Pencil, Plus, Trash2, X } from "lucide-react"
 
 import { cn, formatDateDDMMYYYY } from "src/lib/utils"
 import { Button } from "src/components/ui/button"
@@ -14,14 +13,17 @@ import { Input } from "src/components/ui/input"
 import { Label } from "src/components/ui/label"
 import { Textarea } from "src/components/ui/textarea"
 import { StatusBadge } from "src/components/common/StatusBadge"
+import TripRequestRow from "src/components/admin/TripRequestRow"
 import {
   deleteBookingRequest,
-  markBookingRequestContacted,
   updateBookingRequest,
+  STATUS_LABEL,
+  STATUS_TONE,
   type BookingRequest,
 } from "src/lib/data/booking-requests"
 import { downloadTripRequestPdf, tripRequestToPdfData } from "src/lib/pdf/trip-request-pdf"
 import { useAdminData } from "src/components/layout/AdminDataContext"
+import { toast } from "sonner"
 
 interface TravelerFormRow {
   name: string
@@ -35,7 +37,6 @@ interface FormState {
   startDate: string
   travelers: string
   specialRequests: string
-  status: BookingRequest["status"]
   travelerDetails: TravelerFormRow[]
 }
 
@@ -47,7 +48,6 @@ function requestToForm(req: BookingRequest): FormState {
     startDate: req.startDate,
     travelers: String(req.travelers),
     specialRequests: req.specialRequests,
-    status: req.status,
     travelerDetails: req.travelerDetails.map((t) => ({ name: t.name, age: t.age ? String(t.age) : "" })),
   }
 }
@@ -65,16 +65,6 @@ function AdminTripRequests() {
   const modalClosedRef = useRef(false)
 
   const pkg = viewing ? packages.find((p) => p.id === viewing.packageId) : undefined
-
-  async function handleMarkContacted(id: string) {
-    try {
-      await markBookingRequestContacted(id)
-      await refreshBookingRequests()
-      toast.success("Marked as contacted.")
-    } catch {
-      toast.error("Could not update this request.")
-    }
-  }
 
   async function handleDelete(id: string) {
     if (!window.confirm("Are you sure you want to delete this trip request?")) return
@@ -164,7 +154,6 @@ function AdminTripRequests() {
         startDate: form.startDate,
         travelers,
         specialRequests: form.specialRequests,
-        status: form.status,
         travelerDetails,
       })
       await refreshBookingRequests()
@@ -185,7 +174,8 @@ function AdminTripRequests() {
       <div>
         <h1 className={cn("text-2xl font-bold tracking-tight")}>Trip Requests</h1>
         <p className={cn("text-muted-foreground")}>
-          Leads from the "Book Now" wizard. Reach out on WhatsApp/phone/email, then mark them contacted.
+          Review each request, then confirm or decline it — travellers see the outcome and any note you add on
+          their profile.
         </p>
       </div>
 
@@ -199,59 +189,13 @@ function AdminTripRequests() {
             <p className="p-6 text-center text-sm text-muted-foreground">No trip requests yet.</p>
           ) : (
             requests.map((req) => (
-              <div key={req.id} className="flex flex-wrap items-center justify-between gap-4 p-4">
-                <button type="button" onClick={() => openViewModal(req)} className="min-w-0 flex-1 text-left">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">{req.fullName}</span>
-                    <StatusBadge label={req.status} tone={req.status === "contacted" ? "positive" : "neutral"} />
-                  </div>
-                  <div className="mt-1 text-sm text-muted-foreground">
-                    {req.packageTitle} • {formatDateDDMMYYYY(req.startDate)} • {req.travelers} traveller
-                    {req.travelers === 1 ? "" : "s"} •{" "}
-                    ₹{req.packagePrice.toLocaleString("en-IN")}/person
-                  </div>
-                  <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                    <span className="inline-flex items-center gap-1">
-                      <Mail className="h-3 w-3" /> {req.email}
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                      <Phone className="h-3 w-3" /> {req.phone}
-                    </span>
-                  </div>
-                  {req.specialRequests && (
-                    <div className="mt-1 text-xs text-muted-foreground">Notes: {req.specialRequests}</div>
-                  )}
-                </button>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <Button
-                    size="sm"
-                    variant={req.status === "contacted" ? "outline" : "default"}
-                    disabled={req.status === "contacted"}
-                    onClick={() => handleMarkContacted(req.id)}
-                    className="gap-1.5"
-                  >
-                    <CheckCircle2 className="h-4 w-4" />
-                    {req.status === "contacted" ? "Contacted" : "Mark Contacted"}
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => openViewModal(req)}
-                    aria-label="View trip request details"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => handleDelete(req.id)}
-                    aria-label="Delete trip request"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+              <TripRequestRow
+                key={req.id}
+                request={req}
+                onUpdated={refreshBookingRequests}
+                onView={() => openViewModal(req)}
+                onDelete={() => handleDelete(req.id)}
+              />
             ))
           )}
         </div>
@@ -268,16 +212,22 @@ function AdminTripRequests() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <span className="text-lg font-semibold">{viewing.fullName}</span>
-                  <StatusBadge
-                    label={viewing.status}
-                    tone={viewing.status === "contacted" ? "positive" : "neutral"}
-                  />
+                  <StatusBadge label={STATUS_LABEL[viewing.status]} tone={STATUS_TONE[viewing.status]} />
                 </div>
                 <Button size="sm" variant="outline" className="gap-1.5" onClick={startEditing}>
                   <Pencil className="h-3.5 w-3.5" />
                   Edit
                 </Button>
               </div>
+
+              {viewing.adminNote && (
+                <div className="rounded-lg border bg-muted/30 p-3 text-sm">
+                  <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                    Note to traveller
+                  </div>
+                  <p className="mt-1">{viewing.adminNote}</p>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 gap-3 rounded-lg border bg-muted/30 p-4 text-sm sm:grid-cols-2">
                 <div>
@@ -450,30 +400,14 @@ function AdminTripRequests() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="startDate">Departure Date *</Label>
-                  <Input
-                    id="startDate"
-                    type="date"
-                    value={form.startDate}
-                    onChange={(e) => setForm((f) => f && { ...f, startDate: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <select
-                    id="status"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                    value={form.status}
-                    onChange={(e) =>
-                      setForm((f) => f && { ...f, status: e.target.value as BookingRequest["status"] })
-                    }
-                  >
-                    <option value="new">New</option>
-                    <option value="contacted">Contacted</option>
-                  </select>
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="startDate">Departure Date *</Label>
+                <Input
+                  id="startDate"
+                  type="date"
+                  value={form.startDate}
+                  onChange={(e) => setForm((f) => f && { ...f, startDate: e.target.value })}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="specialRequests">Special Requests / Notes</Label>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
+import { Link } from "react-router-dom"
 import { toast } from "sonner"
-import { CheckCircle2, Mail, MessageCircle, Phone, User } from "lucide-react"
+import { CheckCircle2, Mail, Phone, User } from "lucide-react"
 
 import { cn, formatDateDDMMYYYY } from "src/lib/utils"
 import { Button } from "src/components/ui/button"
@@ -13,8 +14,10 @@ import {
 import { Input } from "src/components/ui/input"
 import { Label } from "src/components/ui/label"
 import { Textarea } from "src/components/ui/textarea"
+import { useAuth } from "src/lib/auth/AuthContext"
 import type { TravelPackage } from "src/lib/data/packages"
 import { createBookingRequest } from "src/lib/data/booking-requests"
+import { getMyProfile } from "src/lib/data/profile"
 
 function formatPrice(price: number) {
   return `₹${price.toLocaleString("en-IN")}`
@@ -43,24 +46,6 @@ const INITIAL_FORM: FormState = {
 
 const MIN_FILL_MS = 3_000 // reject a submit faster than a human could plausibly fill the form
 
-function buildWhatsAppUrl(pkg: TravelPackage, form: FormState, totalCost: number): string | null {
-  const number = import.meta.env.VITE_WHATSAPP_NUMBER as string | undefined
-  if (!number) return null
-
-  const message = [
-    `New Booking Request – ${pkg.title}`,
-    `Name: ${form.fullName}`,
-    `Phone: ${form.phone}`,
-    `Email: ${form.email}`,
-    `Departure Date: ${formatDateDDMMYYYY(form.startDate)}`,
-    `Travelers: ${form.travelers}`,
-    `Estimated Total: ${formatPrice(totalCost)}`,
-    `Special Requests: ${form.specialRequests || "None"}`,
-  ].join("\n")
-
-  return `https://wa.me/${number}?text=${encodeURIComponent(message)}`
-}
-
 interface BookingWizardProps {
   pkg: TravelPackage
   open: boolean
@@ -68,19 +53,35 @@ interface BookingWizardProps {
 }
 
 function BookingWizard({ pkg, open, onOpenChange }: BookingWizardProps) {
+  const { user } = useAuth()
   const [step, setStep] = useState(1)
   const [form, setForm] = useState<FormState>(INITIAL_FORM)
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
   const [submitting, setSubmitting] = useState(false)
   const [formLoadedAt, setFormLoadedAt] = useState(Date.now())
-  const [whatsappUrl, setWhatsappUrl] = useState<string | null>(null)
 
   const totalCost = pkg.price * form.travelers
 
-  // Restart the min-fill-time timer every time the dialog is (re)opened.
+  // Restart the min-fill-time timer every time the dialog is (re)opened, and
+  // prefill contact details for a logged-in traveller (fields stay editable).
   useEffect(() => {
-    if (open) setFormLoadedAt(Date.now())
-  }, [open])
+    if (!open) return
+    setFormLoadedAt(Date.now())
+    if (!user) return
+
+    setForm((prev) => ({ ...prev, email: prev.email || user.email || "" }))
+    getMyProfile()
+      .then((profile) => {
+        setForm((prev) => ({
+          ...prev,
+          fullName: prev.fullName || profile.fullName || "",
+          phone: prev.phone || profile.phone || "",
+        }))
+      })
+      .catch(() => {
+        // Prefill is a nicety, not required for booking — fail silently.
+      })
+  }, [open, user])
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -132,10 +133,6 @@ function BookingWizard({ pkg, open, onOpenChange }: BookingWizardProps) {
         website: form.website,
       })
 
-      const url = buildWhatsAppUrl(pkg, form, totalCost)
-      setWhatsappUrl(url)
-      if (url) window.open(url, "_blank", "noopener,noreferrer")
-
       setStep(3)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not send your request. Please try again.")
@@ -149,7 +146,6 @@ function BookingWizard({ pkg, open, onOpenChange }: BookingWizardProps) {
       setStep(1)
       setForm(INITIAL_FORM)
       setErrors({})
-      setWhatsappUrl(null)
     }
     onOpenChange(next)
   }
@@ -314,7 +310,7 @@ function BookingWizard({ pkg, open, onOpenChange }: BookingWizardProps) {
             <h2 className="text-2xl font-black">Request Sent!</h2>
             <p className="max-w-sm text-muted-foreground">
               Thank you, <strong>{form.fullName}</strong>. Your request for <strong>{pkg.title}</strong> has been
-              logged. Our team will reach out on WhatsApp shortly to confirm availability and arrange payment.
+              logged. We'll review it and confirm shortly — track the outcome on your profile.
             </p>
             <div className="w-full space-y-1 rounded-lg border bg-muted/40 p-4 text-left text-sm">
               <div>
@@ -330,20 +326,13 @@ function BookingWizard({ pkg, open, onOpenChange }: BookingWizardProps) {
                 <strong className="text-emerald-500">{formatPrice(totalCost)}</strong>
               </div>
             </div>
-            {whatsappUrl && (
-              <Button asChild className="w-full gap-2">
-                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="h-4 w-4" />
-                  Open WhatsApp
-                </a>
-              </Button>
-            )}
-            <Button
-              onClick={() => handleClose(false)}
-              variant={whatsappUrl ? "outline" : "default"}
-              className="w-full"
-            >
-              {whatsappUrl ? "Close" : "Awesome, Got it"}
+            <Button asChild className="w-full">
+              <Link to="/profile" onClick={() => handleClose(false)}>
+                View on My Profile
+              </Link>
+            </Button>
+            <Button onClick={() => handleClose(false)} variant="outline" className="w-full">
+              Close
             </Button>
           </div>
         )}

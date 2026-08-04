@@ -11,7 +11,6 @@ import {
   Compass,
   Hotel,
   Mail,
-  MessageCircle,
   Phone,
   Plane,
   User,
@@ -23,7 +22,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "src/c
 import { Input } from "src/components/ui/input"
 import { Label } from "src/components/ui/label"
 import { Textarea } from "src/components/ui/textarea"
+import { useAuth } from "src/lib/auth/AuthContext"
 import { createBookingRequest } from "src/lib/data/booking-requests"
+import { getMyProfile } from "src/lib/data/profile"
 import { getPackages, type TravelPackage } from "src/lib/data/packages"
 import { cn, formatDateDDMMYYYY } from "src/lib/utils"
 
@@ -32,6 +33,7 @@ function formatPrice(price: number) {
 }
 
 function TripCustomizer() {
+  const { user } = useAuth()
   const [packages, setPackages] = useState<TravelPackage[]>([])
   const [loading, setLoading] = useState(true)
   const [step, setStep] = useState(1)
@@ -47,7 +49,6 @@ function TripCustomizer() {
   const [phone, setPhone] = useState("")
   const [specialRequests, setSpecialRequests] = useState("")
   const [submitting, setSubmitting] = useState(false)
-  const [whatsappUrl, setWhatsappUrl] = useState<string | null>(null)
 
   useEffect(() => {
     getPackages()
@@ -60,6 +61,21 @@ function TripCustomizer() {
       .catch(() => setPackages([]))
       .finally(() => setLoading(false))
   }, [])
+
+  // Prefill contact details for a logged-in traveller — fields stay editable,
+  // guests (no session) see this step exactly as before.
+  useEffect(() => {
+    if (!user) return
+    setEmail((prev) => prev || user.email || "")
+    getMyProfile()
+      .then((profile) => {
+        setFullName((prev) => prev || profile.fullName || "")
+        setPhone((prev) => prev || profile.phone || "")
+      })
+      .catch(() => {
+        // Profile prefill is a nicety, not required for booking — fail silently.
+      })
+  }, [user])
 
   const selectedPkg = useMemo(() => packages.find((p) => p.id === selectedPkgId) || null, [packages, selectedPkgId])
 
@@ -122,26 +138,6 @@ function TripCustomizer() {
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
-  function buildWhatsAppUrl(pkg: TravelPackage, total: number): string | null {
-    const number = import.meta.env.VITE_WHATSAPP_NUMBER as string | undefined
-    if (!number) return null
-
-    const message = [
-      `Custom Trip Proposal – ${pkg.title}`,
-      `Name: ${fullName}`,
-      `Phone: ${phone}`,
-      `Email: ${email}`,
-      `Departure Date: ${formatDateDDMMYYYY(startDate)}`,
-      `Travelers: ${travelers}`,
-      `Hotel Tier: ${hotelClass.toUpperCase()}`,
-      `Transit Option: ${transport.toUpperCase()}`,
-      `Estimated Cost: ${formatPrice(total)}`,
-      `Custom Instructions: ${specialRequests || "None"}`,
-    ].join("\n")
-
-    return `https://wa.me/${number}?text=${encodeURIComponent(message)}`
-  }
-
   async function handleSubmit() {
     if (!selectedPkg) return
     setSubmitting(true)
@@ -162,10 +158,6 @@ function TripCustomizer() {
         phone,
         specialRequests: summaryString,
       })
-
-      const url = buildWhatsAppUrl(selectedPkg, priceCalculation.total)
-      setWhatsappUrl(url)
-      if (url) window.open(url, "_blank", "noopener,noreferrer")
 
       setStep(5)
     } catch (err) {
@@ -456,7 +448,7 @@ function TripCustomizer() {
             </Card>
           )}
 
-          {/* STEP 5: SUCCESS & WHATSAPP REDIRECT */}
+          {/* STEP 5: SUCCESS */}
           {step === 5 && (
             <Card className="rounded-2xl border shadow-sm text-center py-10 px-6">
               <CardContent className="space-y-6">
@@ -467,7 +459,8 @@ function TripCustomizer() {
                   <CardTitle className="text-2xl font-black">Plan Proposal Sent!</CardTitle>
                   <CardDescription className="max-w-md mx-auto text-sm text-muted-foreground mt-2">
                     Thank you, <strong>{fullName}</strong>. Your customized trip itinerary proposal for{" "}
-                    <strong>{selectedPkg?.title}</strong> has been logged.
+                    <strong>{selectedPkg?.title}</strong> has been logged. Our team will review it and confirm
+                    shortly — track the outcome on your profile.
                   </CardDescription>
                 </div>
 
@@ -494,17 +487,9 @@ function TripCustomizer() {
                   </div>
                 </div>
 
-                {whatsappUrl && (
-                  <Button asChild className="w-full max-w-xs gap-2 rounded-full" size="lg">
-                    <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-                      <MessageCircle className="h-4 w-4" /> Open WhatsApp Connection
-                    </a>
-                  </Button>
-                )}
-
                 <div>
-                  <Button asChild variant="outline" className="rounded-full">
-                    <Link to="/my-bookings">View Bookings Dashboard</Link>
+                  <Button asChild className="rounded-full">
+                    <Link to="/profile">Track this request on your profile</Link>
                   </Button>
                 </div>
               </CardContent>
