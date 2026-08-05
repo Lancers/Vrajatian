@@ -1,8 +1,11 @@
 import { useState } from "react"
-import { Link, NavLink } from "react-router-dom"
-import { Compass, Menu, X } from "lucide-react"
+import { Link, NavLink, useNavigate } from "react-router-dom"
+import { Compass, LogOut, Menu, User, X } from "lucide-react"
+import { toast } from "sonner"
 
 import { cn } from "src/lib/utils"
+import { supabase } from "src/lib/supabase"
+import { useAuth } from "src/lib/auth/AuthContext"
 import { Button } from "src/components/ui/button"
 import ThemeToggle from "./ThemeToggle"
 
@@ -10,12 +13,20 @@ const navItems = [
   { to: "/", label: "Home" },
   { to: "/destinations", label: "Destinations" },
   { to: "/plan-trip", label: "Plan a Trip" },
-  { to: "/my-bookings", label: "My Bookings" },
   { to: "/contact", label: "Contact" },
 ]
 
 function Header() {
   const [isOpen, setIsOpen] = useState(false)
+  const { session } = useAuth()
+  const navigate = useNavigate()
+
+  async function handleLogout() {
+    await supabase.auth.signOut()
+    setIsOpen(false)
+    toast.success("Logged out.")
+    navigate("/")
+  }
 
   return (
     <header className={cn("sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60")}>
@@ -45,6 +56,25 @@ function Header() {
             </NavLink>
           ))}
         </nav>
+
+        <div className={cn("hidden lg:flex items-center gap-2")}>
+          {session ? (
+            <>
+              <Button asChild variant="ghost" size="sm" className="gap-1.5">
+                <Link to="/profile">
+                  <User className="h-4 w-4" /> Profile
+                </Link>
+              </Button>
+              <Button variant="ghost" size="sm" className="gap-1.5" onClick={handleLogout}>
+                <LogOut className="h-4 w-4" /> Log out
+              </Button>
+            </>
+          ) : (
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/login">Log in</Link>
+            </Button>
+          )}
+        </div>
 
         <div className={cn("flex items-center gap-2")}>
           <ThemeToggle />
@@ -81,6 +111,33 @@ function Header() {
                 {item.label}
               </NavLink>
             ))}
+            <div className="border-t pt-4">
+              {session ? (
+                <div className="flex flex-col gap-3">
+                  <Link
+                    to="/profile"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground"
+                  >
+                    <User className="h-4 w-4" /> Profile
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground"
+                  >
+                    <LogOut className="h-4 w-4" /> Log out
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  to="/login"
+                  onClick={() => setIsOpen(false)}
+                  className="text-sm font-semibold text-muted-foreground hover:text-foreground"
+                >
+                  Log in
+                </Link>
+              )}
+            </div>
           </nav>
         </div>
       )}

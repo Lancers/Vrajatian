@@ -1,11 +1,12 @@
 import { cn } from "src/lib/utils"
 
-type StatusBadgeTone = "positive" | "neutral" | "accent"
+type StatusBadgeTone = "positive" | "neutral" | "accent" | "negative"
 
 const TONE_CLASSES: Record<StatusBadgeTone, string> = {
   positive: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600",
   neutral: "border-amber-500/30 bg-amber-500/10 text-amber-600",
   accent: "border-primary/30 bg-primary/10 text-primary",
+  negative: "border-red-500/30 bg-red-500/10 text-red-600",
 }
 
 interface StatusBadgeProps {

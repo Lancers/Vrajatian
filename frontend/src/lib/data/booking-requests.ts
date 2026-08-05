@@ -25,6 +25,8 @@ export interface TravelerDetail {
   age?: number
 }
 
+export type BookingRequestStatus = "new" | "contacted" | "confirmed" | "declined"
+
 export interface BookingRequest {
   id: string
   packageId: string | null
@@ -36,14 +38,26 @@ export interface BookingRequest {
   email: string
   phone: string
   specialRequests: string
-  status: "new" | "contacted"
+  status: BookingRequestStatus
   travelerDetails: TravelerDetail[]
+  userId: string | null
+  adminNote: string | null
   createdAt: string
+  updatedAt: string
 }
 
-/** Submit a booking request — public, no auth required. */
+/**
+ * Submit a booking request — public, no auth required. If the visitor is
+ * logged in, the request is additionally linked to their account so it shows
+ * up on their profile.
+ */
 export async function createBookingRequest(input: BookingRequestInput): Promise<BookingRequest> {
-  return api.post<BookingRequest>("/booking-requests", input)
+  return api.postOptionalAuth<BookingRequest>("/booking-requests", input)
+}
+
+/** The logged-in user's own trip requests. */
+export async function getMyBookingRequests(): Promise<BookingRequest[]> {
+  return api.getAuthed<BookingRequest[]>("/booking-requests/mine")
 }
 
 /** Every booking request — admin only (the API enforces admin access). */
@@ -51,9 +65,33 @@ export async function getAllBookingRequests(): Promise<BookingRequest[]> {
   return api.getAuthed<BookingRequest[]>("/admin/booking-requests")
 }
 
-/** Mark a booking request as contacted. */
+/** Admin: move a request to contacted/confirmed/declined, optionally with a note the traveller sees. */
+export async function updateBookingRequestStatus(
+  id: string,
+  status: Exclude<BookingRequestStatus, "new">,
+  adminNote?: string,
+): Promise<BookingRequest> {
+  return api.patchAuthed<BookingRequest>(`/admin/booking-requests/${id}/status`, { status, adminNote })
+}
+
+/** @deprecated kept only for the not-yet-rewritten AdminTripRequests row action; drop once that's updated. */
 export async function markBookingRequestContacted(id: string): Promise<BookingRequest> {
-  return api.patchAuthed<BookingRequest>(`/admin/booking-requests/${id}/contacted`, {})
+  return updateBookingRequestStatus(id, "contacted")
+}
+
+/** Shared status -> StatusBadge tone mapping (profile + admin views agree on this). */
+export const STATUS_TONE: Record<BookingRequestStatus, "positive" | "neutral" | "accent" | "negative"> = {
+  new: "neutral",
+  contacted: "accent",
+  confirmed: "positive",
+  declined: "negative",
+}
+
+export const STATUS_LABEL: Record<BookingRequestStatus, string> = {
+  new: "New",
+  contacted: "Contacted",
+  confirmed: "Confirmed",
+  declined: "Declined",
 }
 
 export interface BookingRequestUpdate {
@@ -63,11 +101,15 @@ export interface BookingRequestUpdate {
   email?: string
   phone?: string
   specialRequests?: string
-  status?: "new" | "contacted"
+  status?: BookingRequestStatus
   travelerDetails?: TravelerDetail[]
 }
 
-/** Edit a booking request's customer-submitted fields and/or status. */
+/**
+ * Edit a booking request's customer-submitted fields and/or traveler
+ * details. Status transitions go through `updateBookingRequestStatus`
+ * instead — kept separate so there's one place that changes status.
+ */
 export async function updateBookingRequest(
   id: string,
   patch: BookingRequestUpdate,
