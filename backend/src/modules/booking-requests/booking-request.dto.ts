@@ -20,6 +20,8 @@ export const bookingRequestInputSchema = z.object({
 
 export type BookingRequestInput = z.infer<typeof bookingRequestInputSchema>;
 
+export type BookingRequestStatus = 'new' | 'contacted' | 'confirmed' | 'declined';
+
 /**
  * One traveler's name/age, added by an admin after confirming with the
  * customer — never collected on the public booking form. Kept as a single
@@ -34,10 +36,12 @@ export const travelerDetailSchema = z.object({
 export type TravelerDetail = z.infer<typeof travelerDetailSchema>;
 
 /**
- * Admin edit — every field optional (partial update), plus `status` and
- * `travelerDetails` which aren't settable on the public create endpoint.
- * `packageId`/package snapshot fields are intentionally excluded: they're a
- * snapshot at submission time, not editable afterward.
+ * Admin edit — every field optional (partial update), plus `travelerDetails`
+ * which isn't settable on the public create endpoint. `status` here exists
+ * for this generic edit form; the dedicated `PATCH :id/status` endpoint below
+ * is the richer path (it also carries the traveller-facing `adminNote`).
+ * `packageId`/package snapshot fields are intentionally excluded here:
+ * they're a snapshot at submission time, not editable after.
  */
 export const bookingRequestUpdateSchema = z.object({
   startDate: z.string().trim().min(1, 'Departure date is required.').optional(),
@@ -46,7 +50,7 @@ export const bookingRequestUpdateSchema = z.object({
   email: z.string().trim().email('Please provide a valid email.').max(200).optional(),
   phone: z.string().trim().min(6, 'Please provide a valid phone number.').max(40).optional(),
   specialRequests: z.string().trim().max(2000).optional(),
-  status: z.enum(['new', 'contacted']).optional(),
+  status: z.enum(['new', 'contacted', 'confirmed', 'declined']).optional(),
   travelerDetails: z.array(travelerDetailSchema).optional(),
 });
 
@@ -64,7 +68,23 @@ export interface BookingRequestResponse {
   email: string;
   phone: string;
   specialRequests: string;
-  status: 'new' | 'contacted';
+  status: BookingRequestStatus;
   travelerDetails: TravelerDetail[];
+  userId: string | null;
+  adminNote: string | null;
   createdAt: string;
+  updatedAt: string;
 }
+
+/**
+ * Admin-only status transition. `new` is deliberately excluded — admins move
+ * requests forward (contacted/confirmed/declined), never back to the initial
+ * state. `adminNote` is what the traveller sees on their profile as the
+ * resolution message, replacing what used to be said over WhatsApp.
+ */
+export const adminBookingStatusUpdateSchema = z.object({
+  status: z.enum(['contacted', 'confirmed', 'declined']),
+  adminNote: z.string().trim().max(2000).optional(),
+});
+
+export type AdminBookingStatusUpdateInput = z.infer<typeof adminBookingStatusUpdateSchema>;
