@@ -6,6 +6,7 @@ import { supabase } from "src/lib/supabase"
 import { Button } from "src/components/ui/button"
 import { StatusBadge } from "src/components/common/StatusBadge"
 import { useAdminData } from "src/components/layout/AdminDataContext"
+import { STATUS_LABEL, STATUS_TONE } from "src/lib/data/booking-requests"
 
 const RECENT_LIMIT = 5
 
@@ -76,7 +77,7 @@ function AdminDashboard() {
                     <td className={cn("p-3")}>{req.packageTitle}</td>
                     <td className={cn("p-3")}>{formatDateDDMMYYYY(req.startDate)}</td>
                     <td className={cn("p-3")}>
-                      <StatusBadge label={req.status} tone={req.status === "contacted" ? "positive" : "neutral"} />
+                      <StatusBadge label={STATUS_LABEL[req.status]} tone={STATUS_TONE[req.status]} />
                     </td>
                   </tr>
                 ))

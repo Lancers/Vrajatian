@@ -74,11 +74,6 @@ export async function updateBookingRequestStatus(
   return api.patchAuthed<BookingRequest>(`/admin/booking-requests/${id}/status`, { status, adminNote })
 }
 
-/** @deprecated kept only for the not-yet-rewritten AdminTripRequests row action; drop once that's updated. */
-export async function markBookingRequestContacted(id: string): Promise<BookingRequest> {
-  return updateBookingRequestStatus(id, "contacted")
-}
-
 /** Shared status -> StatusBadge tone mapping (profile + admin views agree on this). */
 export const STATUS_TONE: Record<BookingRequestStatus, "positive" | "neutral" | "accent" | "negative"> = {
   new: "neutral",
