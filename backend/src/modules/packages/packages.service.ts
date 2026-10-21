@@ -1,9 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PackageInput, PackageResponse } from './package.dto';
 import { PackageRow, PackagesRepository } from './packages.repository';
+import { DEFAULT_PACKAGES } from './default-packages';
 
 @Injectable()
 export class PackagesService {
+  private readonly logger = new Logger(PackagesService.name);
+
   constructor(private readonly repo: PackagesRepository) {}
 
   private toResponse(row: PackageRow): PackageResponse {
@@ -33,20 +36,47 @@ export class PackagesService {
 
   // ── Public ──────────────────────────────────────────────────────────────
   async listPublished(type?: string): Promise<PackageResponse[]> {
-    return (await this.repo.listPublished(type)).map((r) => this.toResponse(r));
+    try {
+      const rows = await this.repo.listPublished(type);
+      if (rows && rows.length > 0) {
+        return rows.map((r) => this.toResponse(r));
+      }
+    } catch (err) {
+      this.logger.warn(
+        `Failed to fetch published packages from database (${(err as Error).message}). Using fallback catalog.`,
+      );
+    }
+    const sample = DEFAULT_PACKAGES;
+    return type ? sample.filter((p) => p.type === type) : sample;
   }
 
   async getPublishedBySlug(slug: string): Promise<PackageResponse> {
-    const row = await this.repo.findPublishedBySlug(slug);
-    if (!row) throw new NotFoundException('Package not found.');
-    return this.toResponse(row);
+    try {
+      const row = await this.repo.findPublishedBySlug(slug);
+      if (row) return this.toResponse(row);
+    } catch (err) {
+      this.logger.warn(
+        `Failed to fetch package by slug from database (${(err as Error).message}). Using fallback catalog.`,
+      );
+    }
+    const match = DEFAULT_PACKAGES.find((p) => p.slug === slug);
+    if (match) return match;
+    throw new NotFoundException('Package not found.');
   }
 
   /** Used by booking-requests to validate a packageId and snapshot its title/price. */
   async getPublishedById(id: string): Promise<PackageResponse> {
-    const row = await this.repo.findById(id);
-    if (!row || row.status !== 'published') throw new NotFoundException('Package not found.');
-    return this.toResponse(row);
+    try {
+      const row = await this.repo.findById(id);
+      if (row && row.status === 'published') return this.toResponse(row);
+    } catch (err) {
+      this.logger.warn(
+        `Failed to fetch package by id from database (${(err as Error).message}). Using fallback catalog.`,
+      );
+    }
+    const match = DEFAULT_PACKAGES.find((p) => p.id === id);
+    if (match) return match;
+    throw new NotFoundException('Package not found.');
   }
 
   // ── Admin ───────────────────────────────────────────────────────────────
