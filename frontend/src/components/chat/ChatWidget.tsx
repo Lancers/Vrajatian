@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react"
-import { toast } from "sonner"
-import { Loader2, MessageCircle, Send, X } from "lucide-react"
+import { Loader2, MessageCircle, Send, X, Sparkles, Compass } from "lucide-react"
 
 import { cn } from "src/lib/utils"
 import { Button } from "src/components/ui/button"
@@ -9,8 +8,15 @@ import { sendChatMessage, type ChatMessage } from "src/lib/data/chat"
 
 const GREETING: ChatMessage = {
   role: "assistant",
-  content: "Hi! Ask me about our trip packages or destinations, and I'll help you find the right one.",
+  content: "Hello! I am your Vrajatian AI Helpdesk. Ask me anything about destinations, bookings, pricing, or custom itineraries.",
 }
+
+const STARTER_PROMPTS = [
+  "Romantic Kerala honeymoon under ₹50k",
+  "Heritage havelis in Rajasthan",
+  "Easy mountain treks in Himachal",
+  "Best time for Andaman islands",
+]
 
 function ChatWidget() {
   const [open, setOpen] = useState(false)
@@ -33,91 +39,153 @@ function ChatWidget() {
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [open])
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault()
-    const text = input.trim()
+  async function handleSend(textToSend?: string) {
+    const text = (textToSend || input).trim()
     if (!text || isSending) return
 
-    // The greeting is shown locally but was never part of an actual API exchange — exclude it.
-    const history = messages.filter((m) => m !== GREETING)
-    const nextMessages: ChatMessage[] = [...messages, { role: "user", content: text }]
-    setMessages(nextMessages)
+    const userMsg: ChatMessage = { role: "user", content: text }
+    const nextHistory = [...messages, userMsg]
+    setMessages(nextHistory)
     setInput("")
     setIsSending(true)
 
     try {
-      const { reply } = await sendChatMessage(text, history)
-      setMessages((prev) => [...prev, { role: "assistant", content: reply }])
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't reach the chat assistant.")
-      setMessages((prev) => prev.slice(0, -1))
-      setInput(text)
+      const response = await sendChatMessage(text, nextHistory)
+      setMessages((prev) => [...prev, { role: "assistant", content: response.reply }])
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "I am having trouble connecting to the reservation network. Please reach out to our team at concierge@vrajatian.com or retry shortly.",
+        },
+      ])
     } finally {
       setIsSending(false)
     }
   }
 
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    handleSend()
+  }
+
   return (
     <>
-      <Button
-        size="icon"
+      {/* Floating Action Trigger - Solid, No Glass */}
+      <button
         onClick={() => setOpen((v) => !v)}
-        className="fixed bottom-4 right-4 z-40 h-14 w-14 rounded-full shadow-lg"
-        aria-label={open ? "Close chat assistant" : "Open chat assistant"}
+        className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white px-4 py-3.5 shadow-xl transition-all duration-300 hover:scale-105 group border border-neutral-800"
+        aria-label={open ? "Close helpdesk" : "Open AI helpdesk"}
       >
-        <MessageCircle className="!size-6" />
-      </Button>
+        <div className="relative">
+          <MessageCircle className="h-5 w-5 text-sky-400" />
+          <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-sky-500" />
+          </span>
+        </div>
+        <span className="text-xs font-bold tracking-wide hidden sm:inline-block">
+          AI Helpdesk
+        </span>
+      </button>
 
+      {/* Helpdesk Panel - 100% Solid, Zero Glass */}
       {open && (
         <div
           ref={panelRef}
-          className="fixed bottom-20 right-4 z-40 flex h-[28rem] max-h-[70vh] w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-lg border bg-background shadow-xl animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-2 sm:w-80"
+          className="fixed bottom-24 right-4 sm:right-6 z-40 flex h-[32rem] max-h-[75vh] w-[calc(100vw-2rem)] sm:w-96 flex-col overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-2xl animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-4"
         >
-          <div className="flex items-center justify-between border-b px-4 py-3">
-            <span className="font-semibold text-foreground">Vrajatian Assistant</span>
+          {/* Header - Solid Neutral 50 */}
+          <div className="flex items-center justify-between border-b border-neutral-200 bg-neutral-50 px-5 py-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-600 text-white shadow-xs">
+                <Compass className="h-5 w-5" />
+              </div>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-sm text-neutral-900">AI Helpdesk</span>
+                  <Sparkles className="h-3 w-3 text-sky-500" />
+                </div>
+                <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live Travel Helpdesk
+                </span>
+              </div>
+            </div>
+
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="rounded-sm opacity-70 transition-opacity hover:opacity-100"
+              className="rounded-full p-1.5 text-neutral-500 hover:bg-neutral-200 hover:text-neutral-900 transition-colors"
               aria-label="Close"
             >
-              <X className="size-4" />
+              <X className="h-4 w-4" />
             </button>
           </div>
 
-          <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
+          {/* Messages Feed */}
+          <div ref={scrollRef} className="flex-1 space-y-3.5 overflow-y-auto px-4 py-4 text-xs bg-white">
             {messages.map((m, i) => (
               <div
                 key={i}
                 className={cn(
-                  "max-w-[85%] rounded-lg px-3 py-2 text-sm",
+                  "max-w-[85%] rounded-2xl px-4 py-3 leading-relaxed shadow-2xs",
                   m.role === "user"
-                    ? "ml-auto bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground",
+                    ? "ml-auto bg-neutral-900 text-white rounded-br-none font-medium"
+                    : "bg-neutral-50 border border-neutral-200 text-neutral-800 rounded-bl-none"
                 )}
               >
                 {m.content}
               </div>
             ))}
+
             {isSending && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="size-4 animate-spin" />
-                Thinking...
+              <div className="flex items-center gap-2 text-xs text-neutral-500 bg-neutral-50 border border-neutral-200 rounded-2xl px-4 py-2.5 w-fit">
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                <span>Searching destination guides...</span>
               </div>
             )}
           </div>
 
-          <form onSubmit={handleSubmit} className="flex gap-2 border-t p-3">
+          {/* Quick Prompt Suggestions */}
+          {messages.length === 1 && (
+            <div className="px-4 pb-2 border-t border-neutral-200 pt-2 bg-neutral-50">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 block mb-1.5">
+                Popular Inquiries:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {STARTER_PROMPTS.map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    onClick={() => handleSend(prompt)}
+                    className="text-[11px] rounded-full bg-white hover:bg-neutral-100 hover:text-neutral-900 border border-neutral-200 px-2.5 py-1 text-neutral-600 transition-colors text-left shadow-2xs"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Message Input Form - Solid White */}
+          <form onSubmit={handleSubmit} className="flex items-center gap-2 border-t border-neutral-200 p-3 bg-white">
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about a destination..."
+              placeholder="Ask AI Helpdesk anything..."
               maxLength={1000}
               disabled={isSending}
-              autoFocus
+              className="h-10 rounded-full border-neutral-300 bg-neutral-50 text-xs pl-4 focus:border-neutral-900 focus:bg-white text-neutral-900"
             />
-            <Button type="submit" size="icon" disabled={isSending || !input.trim()} aria-label="Send message">
-              <Send className="size-4" />
+            <Button
+              type="submit"
+              size="icon"
+              disabled={isSending || !input.trim()}
+              className="h-10 w-10 shrink-0 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white shadow-xs"
+              aria-label="Send message"
+            >
+              <Send className="h-4 w-4" />
             </Button>
           </form>
         </div>

@@ -11,7 +11,7 @@ function NotFound() {
           404
         </h1>
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-          <div className="h-32 w-32 rounded-full bg-gradient-to-br from-primary/20 to-primary/5" />
+          <div className="h-32 w-32 rounded-full bg-sky-50 dark:bg-sky-950/50 border border-sky-100 dark:border-sky-900" />
         </div>
       </div>
 

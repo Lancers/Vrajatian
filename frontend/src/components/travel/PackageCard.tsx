@@ -1,8 +1,8 @@
-import { useRef, useState } from "react"
+import { useState } from "react"
 import { Link } from "react-router-dom"
-import { ArrowRight, Clock, Heart, MapPin, Star, Users } from "lucide-react"
+import { Bookmark, Star } from "lucide-react"
 
-import { cn, formatDuration } from "src/lib/utils"
+import { cn } from "src/lib/utils"
 import type { PackageType, TravelPackage } from "src/lib/data/packages"
 
 function formatPrice(price: number) {
@@ -21,114 +21,92 @@ interface PackageCardProps {
 }
 
 function PackageCard({ pkg }: PackageCardProps) {
-  const [liked, setLiked] = useState(false)
-  const cardRef = useRef<HTMLAnchorElement>(null)
-  const [transformStyle, setTransformStyle] = useState("")
-  const [sheenStyle, setSheenStyle] = useState({ opacity: 0, x: 50, y: 50 })
+  const [saved, setSaved] = useState(false)
 
-  function handleLike(e: React.MouseEvent) {
+  function handleSave(e: React.MouseEvent) {
     e.preventDefault()
-    setLiked((prev) => !prev)
+    e.stopPropagation()
+    setSaved((prev) => !prev)
   }
 
-  function handleMouseMove(e: React.MouseEvent<HTMLAnchorElement>) {
-    if (!cardRef.current) return
-    const card = cardRef.current
-    const rect = card.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
+  // Duration clean label (e.g., "7 Days" or "2 Night Trip")
+  const durationLabel = pkg.duration ? pkg.duration.split(",")[0].trim() : "Custom Trip"
 
-    // Calculate rotation angles (-2.5 to 2.5 degrees for subtle luxury effect)
-    const centerX = rect.width / 2
-    const centerY = rect.height / 2
-    const rotateX = ((centerY - y) / centerY) * 2.5
-    const rotateY = ((x - centerX) / centerX) * 2.5
-
-    setTransformStyle(`perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.01, 1.01, 1.01)`)
-    setSheenStyle({
-      opacity: 0.05,
-      x: (x / rect.width) * 100,
-      y: (y / rect.height) * 100,
-    })
-  }
-
-  function handleMouseLeave() {
-    setTransformStyle("perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)")
-    setSheenStyle({ opacity: 0, x: 50, y: 50 })
-  }
+  // Curated tag label (e.g., "Romantic Stay", "Heritage Stay", "Coastal Villa")
+  const tagLabel = pkg.region ? `${pkg.region} Stay` : "Romantic Stay"
 
   return (
     <Link
-      ref={cardRef}
       to={`${TYPE_BASE_PATH[pkg.type]}/${pkg.slug}`}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      style={{ transform: transformStyle }}
-      className="group relative flex h-[420px] flex-col justify-end overflow-hidden rounded-2xl border shadow-sm transition-all duration-200 ease-out hover:shadow-xl [transform-style:preserve-3d] select-none"
+      className="group relative flex flex-col rounded-[44px] overflow-hidden bg-[#293340] shadow-[0_12px_40px_-8px_rgba(56,189,248,0.22)] hover:shadow-[0_20px_50px_-6px_rgba(56,189,248,0.38)] transition-all duration-300 hover:-translate-y-1.5"
     >
-      {/* Light Sheen Overlay */}
-      <div
-        className="absolute inset-0 pointer-events-none transition-opacity duration-300 z-20"
-        style={{
-          background: `radial-gradient(circle at ${sheenStyle.x}% ${sheenStyle.y}%, rgba(255, 255, 255, 0.4) 0%, transparent 80%)`,
-          opacity: sheenStyle.opacity,
-        }}
-      />
+      {/* Top Section: Photo with Gradient Fade & Glass Bookmark Button */}
+      <div className="relative aspect-[4/3.2] w-full overflow-hidden bg-neutral-900 rounded-t-[44px]">
+        <img
+          src={pkg.image}
+          alt={pkg.title}
+          loading="lazy"
+          className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
+        />
 
-      <img
-        src={pkg.image}
-        alt={pkg.title}
-        loading="lazy"
-        className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/5" />
+        {/* Soft natural gradient that blends the photo smoothly into the dark slate card bottom */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#293340] via-[#293340]/30 to-transparent pointer-events-none" />
 
-      <button
-        onClick={handleLike}
-        aria-label="Add to wishlist"
-        className={cn(
-          "absolute right-4 top-4 z-30 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white backdrop-blur transition-colors hover:bg-red-500/30",
-          liked && "bg-red-500/30 text-red-400"
-        )}
-      >
-        <Heart size={16} fill={liked ? "currentColor" : "none"} />
-      </button>
-
-      <div className="absolute left-4 right-4 top-4 z-30 flex items-center justify-between">
-        <span className="flex items-center gap-1 rounded-full border border-white/10 bg-black/40 px-3 py-1 text-xs font-bold text-white backdrop-blur">
-          <MapPin size={12} className="text-sky-300" />
-          {pkg.location}
-        </span>
-        <span className="flex items-center gap-1 rounded-full border border-white/10 bg-black/40 px-3 py-1 text-xs font-bold text-white backdrop-blur">
-          <Star size={12} fill="#fbbf24" stroke="#fbbf24" />
-          {pkg.rating}
-        </span>
+        {/* Glass Bookmark Icon Button at Top Right */}
+        <button
+          type="button"
+          onClick={handleSave}
+          aria-label={saved ? "Remove from saved" : "Save destination"}
+          className="absolute top-4 right-4 z-10 h-10 w-10 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/30 text-white flex items-center justify-center transition-all shadow-sm"
+        >
+          <Bookmark
+            size={18}
+            className={cn("text-white transition-colors", saved && "fill-white")}
+          />
+        </button>
       </div>
 
-      <div className="relative z-10 flex flex-col gap-4 p-5 text-white [transform:translateZ(12px)]">
+      {/* Bottom Section: Slate Glass Body matching reference with exact 44px radius */}
+      <div className="p-6 pt-1 flex flex-col justify-between flex-1 bg-[#293340] rounded-b-[44px]">
         <div>
-          <h3 className="mb-1.5 text-xl font-bold leading-tight transition-colors group-hover:text-sky-300">
-            {pkg.title}
-          </h3>
-          <p className="line-clamp-2 text-sm text-white/70">{pkg.description}</p>
-        </div>
+          {/* Header Row: Title on Left, Glass Price Badge on Right */}
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-white leading-tight line-clamp-1 group-hover:text-sky-300 transition-colors">
+              {pkg.title}
+            </h3>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold">
-            <Clock size={12} /> {formatDuration(pkg.duration).split(",")[0]}
-          </span>
-          <span className="flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold">
-            <Users size={12} /> {pkg.groupSize} Max
-          </span>
-        </div>
-
-        <div className="flex items-end justify-between border-t border-white/10 pt-4">
-          <div className="flex flex-col">
-            <span className="text-[11px] font-bold uppercase tracking-wide text-white/60">Starts at</span>
-            <span className="text-2xl font-black">{formatPrice(pkg.price)}</span>
+            {/* Glass Price Capsule Pill */}
+            <span className="rounded-full bg-white/15 backdrop-blur-md px-3.5 py-1.5 text-xs sm:text-sm font-bold text-white shrink-0 shadow-xs">
+              {formatPrice(pkg.price)}
+            </span>
           </div>
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 transition-colors group-hover:bg-sky-400 group-hover:text-black">
-            <ArrowRight size={18} />
+
+          {/* Description */}
+          <p className="text-xs sm:text-[13px] text-slate-300 leading-relaxed line-clamp-2 mt-2.5 font-normal">
+            {pkg.description}
+          </p>
+
+          {/* Glass Chips Row: Star Rating, Category, Duration */}
+          <div className="flex flex-wrap items-center gap-2 mt-4">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/12 backdrop-blur-md px-3.5 py-1.5 text-xs font-semibold text-white">
+              <Star size={13} className="text-white" />
+              <span>{pkg.rating}</span>
+            </span>
+
+            <span className="inline-flex items-center rounded-full bg-white/12 backdrop-blur-md px-3.5 py-1.5 text-xs font-semibold text-white truncate max-w-[140px]">
+              {tagLabel}
+            </span>
+
+            <span className="inline-flex items-center rounded-full bg-white/12 backdrop-blur-md px-3.5 py-1.5 text-xs font-semibold text-white">
+              {durationLabel}
+            </span>
+          </div>
+        </div>
+
+        {/* Action Button: Full-Width White Pill Button */}
+        <div className="mt-6">
+          <div className="w-full rounded-full bg-white hover:bg-neutral-100 text-neutral-900 font-bold py-3.5 text-sm sm:text-base text-center shadow-md transition-all group-hover:scale-[1.01] active:scale-[0.99]">
+            Book now
           </div>
         </div>
       </div>
@@ -137,4 +115,3 @@ function PackageCard({ pkg }: PackageCardProps) {
 }
 
 export default PackageCard
-

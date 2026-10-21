@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
-import { ArrowRight, Compass, HelpCircle, RefreshCw } from "lucide-react"
+import { ArrowRight, Compass, RefreshCw, Sparkles } from "lucide-react"
 
 import { getPackages, type TravelPackage } from "src/lib/data/packages"
 import { cn } from "src/lib/utils"
@@ -142,23 +142,25 @@ function TravelQuiz() {
     <section className="py-24 bg-muted/20">
       <div className="container mx-auto px-4">
         <div className="mx-auto mb-14 max-w-2xl text-center">
-          <span className="mb-3 inline-flex items-center gap-2 rounded-full border bg-primary/10 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-primary">
-            <HelpCircle size={14} /> Quick Recommendation Tool
+          <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/60 px-3.5 py-1 text-xs font-bold uppercase tracking-[2px] text-sky-700 dark:text-sky-300 shadow-2xs">
+            <Sparkles size={13} className="text-sky-600 dark:text-sky-400" /> Tailored Discovery
           </span>
-          <h2 className="mb-4 text-3xl font-black tracking-tight sm:text-4xl">Match Your Travel Style</h2>
-          <p className="text-lg text-muted-foreground">
-            Take our 10-second matching quiz to discover the perfect Indian destination tailored to your vibes and budget.
+          <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-foreground mb-4">Match Your Travel Soul</h2>
+          <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
+            Answer three intuitive questions to uncover the Indian retreat specifically aligned with your travel temperament and budget.
           </p>
         </div>
 
         <div className="mx-auto max-w-xl">
-          <Card className="relative overflow-hidden border bg-card shadow-lg p-0 rounded-3xl">
+          <Card className="relative overflow-hidden border border-border/80 bg-card shadow-xl p-0 rounded-3xl">
             {/* Step 0: Intro */}
             {step === 0 && (
               <>
-                <CardHeader className="text-center pb-2 pt-8">
-                  <Compass className="mx-auto mb-4 h-16 w-16 text-primary" />
-                  <CardTitle className="text-2xl font-black">Not sure where to head next?</CardTitle>
+                <CardHeader className="text-center pb-2 pt-10">
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400">
+                    <Compass className="h-9 w-9" />
+                  </div>
+                  <CardTitle className="text-2xl sm:text-3xl font-extrabold text-foreground">Where will India call you next?</CardTitle>
                   <CardDescription className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
                     Answer 3 quick questions about your travel style, companions, and budget, and let our recommendation engine find your match.
                   </CardDescription>
@@ -167,9 +169,9 @@ function TravelQuiz() {
                   <Button
                     onClick={handleStart}
                     size="lg"
-                    className="rounded-full gap-2 px-8 font-bold"
+                    className="rounded-full gap-2 px-8 font-bold bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-neutral-900 shadow-md active:scale-95 transition-all"
                   >
-                    Start The Quiz <ArrowRight size={16} />
+                    Start The Quiz <ArrowRight size={16} className="text-sky-400 dark:text-sky-600" />
                   </Button>
                 </CardContent>
               </>
@@ -180,7 +182,7 @@ function TravelQuiz() {
               <>
                 <CardHeader className="border-b pb-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-black uppercase tracking-wider text-primary">
+                    <span className="text-xs font-black uppercase tracking-wider text-sky-600 dark:text-sky-400">
                       Question {step} of {QUESTIONS.length}
                     </span>
                     <div className="flex gap-1.5">
@@ -189,7 +191,7 @@ function TravelQuiz() {
                           key={i}
                           className={cn(
                             "h-1.5 w-6 rounded-full transition-all duration-300",
-                            step > i ? "bg-primary w-8" : "bg-muted"
+                            step > i ? "bg-sky-500 w-8" : "bg-muted"
                           )}
                         />
                       ))}
@@ -206,7 +208,7 @@ function TravelQuiz() {
                       key={option.value}
                       onClick={() => handleSelect(QUESTIONS[step - 1].id, option.value)}
                       variant="outline"
-                      className="flex h-auto w-full items-center justify-start gap-4 rounded-xl border bg-background p-4 text-left font-medium transition-all duration-300 hover:border-primary hover:bg-primary/5 hover:translate-x-1"
+                      className="flex h-auto w-full items-center justify-start gap-4 rounded-xl border bg-background p-4 text-left font-medium transition-all duration-300 hover:border-sky-500 hover:bg-sky-50/70 dark:hover:bg-sky-950/40 hover:translate-x-1"
                     >
                       <span className="text-2xl">{option.icon}</span>
                       <span className="text-sm font-semibold">{option.label}</span>
@@ -220,14 +222,14 @@ function TravelQuiz() {
             {step === QUESTIONS.length + 1 && (
               <CardContent className="flex flex-col items-center justify-center py-16 text-center space-y-6">
                 <div
-                  className="relative flex items-center justify-center h-24 w-24 rounded-full border bg-primary/5 transition-transform duration-75"
+                  className="relative flex items-center justify-center h-24 w-24 rounded-full border bg-sky-50 dark:bg-sky-950/30 transition-transform duration-75"
                   style={{ transform: `rotate(${matchPercent * 7.2}deg)` }}
                 >
-                  <Compass className="h-12 w-12 text-primary" />
+                  <Compass className="h-12 w-12 text-sky-600" />
                 </div>
                 <div className="w-full max-w-[240px] bg-muted h-2 rounded-full overflow-hidden">
                   <div
-                    className="bg-primary h-full transition-all duration-75"
+                    className="bg-sky-500 h-full transition-all duration-75"
                     style={{ width: `${matchPercent}%` }}
                   />
                 </div>
@@ -258,7 +260,7 @@ function TravelQuiz() {
                       className="h-32 w-full rounded-xl object-cover sm:h-24 sm:w-24 shrink-0 shadow-sm"
                     />
                     <div className="mt-4 sm:mt-0 flex-1">
-                      <span className="text-xs font-bold text-primary uppercase tracking-wide">
+                      <span className="text-xs font-bold text-sky-600 dark:text-sky-400 uppercase tracking-wide">
                         {matchedPkg.location}
                       </span>
                       <h4 className="text-lg font-bold mt-0.5 leading-tight text-foreground">{matchedPkg.title}</h4>
@@ -279,10 +281,10 @@ function TravelQuiz() {
                   </Button>
                   <Button
                     asChild
-                    className="rounded-full gap-2 w-full sm:w-auto"
+                    className="rounded-full gap-2 w-full sm:w-auto bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-neutral-900 font-semibold shadow-sm"
                   >
                     <Link to={`/destinations/${matchedPkg.slug}`}>
-                      View Details & Customize <ArrowRight size={14} />
+                      View Details & Customize <ArrowRight size={14} className="text-sky-400 dark:text-sky-600" />
                     </Link>
                   </Button>
                 </CardFooter>

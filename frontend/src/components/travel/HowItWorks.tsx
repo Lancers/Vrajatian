@@ -1,185 +1,385 @@
 import { useState } from "react"
-import { CreditCard, Map, Search, Sliders, CheckCircle2 } from "lucide-react"
+import { Link } from "react-router-dom"
+import { motion, AnimatePresence } from "framer-motion"
+import {
+  ShieldCheck,
+  CheckCircle2,
+  Copy,
+  Check,
+  ArrowUpRight,
+  Wifi,
+  Sparkles,
+  Headphones,
+  KeyRound,
+  Award,
+} from "lucide-react"
+import { Button } from "src/components/ui/button"
 
-import { cn } from "src/lib/utils"
-import { Card, CardContent, CardHeader, CardTitle } from "src/components/ui/card"
+interface SanctuaryPreview {
+  id: string
+  label: string
+  name: string
+  location: string
+  image: string
+}
 
-const STEPS = [
+const SANCTUARY_TABS: SanctuaryPreview[] = [
   {
-    number: "01",
-    title: "Select a Base Package",
-    description: "Browse our handpicked collections of vacations or search for your favorite region in India.",
-    icon: Search,
-    color: "text-sky-500 bg-sky-500/10 border-sky-500/20",
-    glowColor: "shadow-sky-500/10 border-sky-500/30",
-    details: [
-      "200+ destinations across India",
-      "Curated historical, adventure, & beach tours",
-      "User-friendly filters for price and region",
-    ],
-    tip: "Tip: Use the search filters in the Hero banner to quickly find tours within your budget range.",
+    id: "palaces",
+    label: "🏰 Palaces",
+    name: "Amer Royal Heritage Suite",
+    location: "Jaipur, Rajasthan",
+    image: "https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=800&q=80",
   },
   {
-    number: "02",
-    title: "Customize Your Itinerary",
-    description: "Fine-tune the days, activities, and lodging preferences to match your perfect travel style.",
-    icon: Sliders,
-    color: "text-amber-500 bg-amber-500/10 border-amber-500/20",
-    glowColor: "shadow-amber-500/10 border-amber-500/30",
-    details: [
-      "Add or remove days easily",
-      "Select adventure trails, heritage walks or spa guides",
-      "Real-time cost updates based on options",
-    ],
-    tip: "Tip: Check out our custom travel planner tool to build an itinerary entirely from scratch.",
+    id: "villas",
+    label: "🌊 Villas",
+    name: "Cabo Serai Oceanfront Villa",
+    location: "South Goa, Beachfront",
+    image: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=800&q=80",
   },
   {
-    number: "03",
-    title: "Secure Your Booking",
-    description: "Finalize your booking with flexible payment plans, secure gateways, and transparent pricing.",
-    icon: CreditCard,
-    color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
-    glowColor: "shadow-emerald-500/10 border-emerald-500/30",
-    details: [
-      "Bank-level SSL encrypted transactions",
-      "Option to pay a small token deposit first",
-      "Instant email confirmation and receipt generation",
-    ],
-    tip: "Tip: Enjoy peace of mind with our 100% money-back guarantee policy up to 7 days before travel.",
+    id: "chalets",
+    label: "🏔️ Chalets",
+    name: "Wildflower Himalayan Lodge",
+    location: "Shimla, Himachal Pradesh",
+    image: "https://images.unsplash.com/photo-1506197603052-3cc9c3a201bd?auto=format&fit=crop&w=800&q=80",
   },
   {
-    number: "04",
-    title: "Travel Worry-Free",
-    description: "Depart on your adventure with round-the-clock local ground support and verified safety standards.",
-    icon: Map,
-    color: "text-purple-500 bg-purple-500/10 border-purple-500/20",
-    glowColor: "shadow-purple-500/10 border-purple-500/30",
-    details: [
-      "Certified local guides on every route",
-      "24/7 emergency support helpline",
-      "Handpicked stays inspected for premium safety",
-    ],
-    tip: "Tip: Keep our emergency number handy on WhatsApp for real-time recommendations during your trip.",
+    id: "backwaters",
+    label: "🛶 Backwaters",
+    name: "Kumarakom Teak Houseboat",
+    location: "Alleppey Lagoons, Kerala",
+    image: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=800&q=80",
   },
 ]
 
 function HowItWorks() {
-  const [activeStep, setActiveStep] = useState(0)
+  const [copied, setCopied] = useState(false)
+  const [activeSanctuary, setActiveSanctuary] = useState(SANCTUARY_TABS[0])
+
+  function handleCopy() {
+    navigator.clipboard?.writeText("VRAJATIAN25")
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.12,
+      },
+    },
+  }
+
+  const cardVariants = {
+    hidden: { opacity: 0, y: 24 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.6,
+        ease: [0.16, 1, 0.3, 1] as [number, number, number, number],
+      },
+    },
+  }
 
   return (
-    <section className="bg-muted/30 py-24 border-y">
-      <div className="container mx-auto px-4">
-        <div className="mx-auto mb-16 max-w-2xl text-center">
-          <span className="text-xs font-bold uppercase tracking-widest text-primary bg-primary/10 px-3.5 py-1 rounded-full">
-            Our Process
-          </span>
-          <h2 className="text-3xl font-black tracking-tight sm:text-4xl mt-3">How It Works</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            We simplify travel planning so you can focus on the journey. Here is how it works.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:items-center">
-          {/* Left: Step navigation with custom vertical timeline line */}
-          <div className="space-y-6 lg:col-span-6 relative pl-6">
-            {/* The vertical timeline connector line */}
-            <div className="absolute left-[37px] top-[40px] bottom-[40px] w-0.5 bg-muted-foreground/10" />
-            {/* Active filled glowing connector path */}
-            <div
-              className="absolute left-[37px] top-[40px] w-0.5 bg-primary transition-all duration-500"
-              style={{
-                height: `${(activeStep / (STEPS.length - 1)) * 82}%`,
-                maxHeight: "82%"
-              }}
-            />
-
-            {STEPS.map((step, idx) => {
-              const Icon = step.icon
-              const isActive = activeStep === idx
-              const isCompleted = idx < activeStep
-
-              return (
-                <div
-                  key={step.number}
-                  onClick={() => setActiveStep(idx)}
-                  className={cn(
-                    "relative flex cursor-pointer items-start gap-5 rounded-2xl border p-5 transition-all duration-300 bg-background",
-                    isActive
-                      ? "border-primary shadow-sm scale-[1.01]"
-                      : "border-border/60 hover:border-border hover:bg-card/50"
-                  )}
+    <section className="py-20 sm:py-28 bg-background border-t border-border/60">
+      <div className="container mx-auto px-4 sm:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
+          {/* Left Column: Title + Subtitle + Trust Stat Card to eliminate empty space */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="lg:col-span-5 space-y-8"
+          >
+            <div className="space-y-4">
+              <span className="text-xs font-extrabold uppercase tracking-widest text-sky-700 block">
+                Effortless Journey
+              </span>
+              <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-foreground leading-[1.12]">
+                Simple Steps To Book Your <br />
+                Ideal Hotel.
+              </h2>
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-md">
+                Experience frictionless luxury travel booking. From biometric express passes to verified best rates, every detail is crafted for complete peace of mind.
+              </p>
+              <div className="pt-2">
+                <Button
+                  asChild
+                  className="rounded-full bg-neutral-900 hover:bg-neutral-800 text-white font-semibold px-7 py-3 h-11 text-xs shadow-md transition-transform hover:scale-105 active:scale-95"
                 >
-                  {/* Step index identifier bubble */}
-                  <div className="mt-1.5 flex-shrink-0 z-10">
-                    <span className={cn(
-                      "flex h-6 w-6 items-center justify-center rounded-full text-xs font-black border transition-colors",
-                      isActive ? "bg-primary border-primary text-primary-foreground" :
-                      isCompleted ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-600" :
-                      "bg-card border-border text-muted-foreground"
-                    )}>
-                      {step.number}
+                  <Link to="/plan-trip" className="inline-flex items-center gap-2">
+                    <span>Explore Custom Itineraries</span>
+                    <ArrowUpRight size={14} />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+
+            {/* Left Column Trust Badge Card (Fixes the dull empty void) */}
+            <div className="rounded-3xl border border-neutral-200/90 bg-neutral-50 p-6 space-y-5">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-2xl bg-sky-100 flex items-center justify-center text-sky-800 shrink-0">
+                  <Award size={20} />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-neutral-900">The Vrajatian Standard</h4>
+                  <p className="text-[10px] text-neutral-500 font-medium">100% Verified Quality Stays</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 border-t border-neutral-200/80 pt-4">
+                <div>
+                  <span className="text-2xl font-black text-neutral-900 leading-none block">99.4%</span>
+                  <span className="text-[10px] text-neutral-500 font-semibold uppercase tracking-wider mt-1 block">
+                    Check-in Success
+                  </span>
+                </div>
+                <div>
+                  <span className="text-2xl font-black text-neutral-900 leading-none block">2,400+</span>
+                  <span className="text-[10px] text-neutral-500 font-semibold uppercase tracking-wider mt-1 block">
+                    Curated Sanctuaries
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 text-[10px] text-neutral-600 font-medium pt-1">
+                <Headphones size={13} className="text-sky-700 shrink-0" />
+                <span>Dedicated 24/7 WhatsApp &amp; AI Helpdesk Concierge</span>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Right Column: 4 Impressive, High-Impact Cards Grid */}
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+            className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-5"
+          >
+            {/* Step Card 1: Blue Card with Picture Inside */}
+            <motion.div
+              variants={cardVariants}
+              whileHover={{ y: -4 }}
+              transition={{ duration: 0.3 }}
+              className="rounded-3xl bg-sky-50 border border-sky-200 p-6 flex flex-col justify-between space-y-4 shadow-xs"
+            >
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-sky-700 block mb-1">
+                  Step 01
+                </span>
+                <h3 className="text-sm font-extrabold text-sky-950 leading-snug">
+                  Book Your Dream Stay, <br />
+                  Simply and Quickly.
+                </h3>
+              </div>
+
+              <div className="relative overflow-hidden rounded-2xl aspect-[4/3] bg-muted shadow-sm group">
+                <img
+                  src="https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=700&q=80"
+                  alt="Resort Pool"
+                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white z-10">
+                  <span className="inline-flex items-center gap-1.5 text-[10px] font-bold bg-neutral-900/90 px-2.5 py-1 rounded-full border border-white/20">
+                    <Sparkles size={11} className="text-sky-400" /> Instant Confirmation
+                  </span>
+                  <span className="text-[10px] font-bold bg-neutral-900/90 px-2 py-1 rounded-full border border-white/20">
+                    ★ 4.98
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Step Card 2: Titanium Apple Wallet-Style Keycard (SUPER COOL & AWESOME) */}
+            <motion.div
+              variants={cardVariants}
+              whileHover={{ y: -4 }}
+              transition={{ duration: 0.3 }}
+              className="rounded-3xl bg-card border border-neutral-200 p-6 flex flex-col justify-between space-y-4 shadow-xs"
+            >
+              <div className="space-y-1">
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground block">
+                  Step 02
+                </span>
+                <h3 className="text-sm font-bold text-foreground">
+                  Verify Your Identity
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Fast biometric verification generates your contactless digital room pass.
+                </p>
+              </div>
+
+              {/* Realistic VIP Digital Keycard */}
+              <div className="relative overflow-hidden rounded-2xl bg-neutral-950 text-white p-4 border border-neutral-800 shadow-xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-6 w-6 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center">
+                      <KeyRound size={13} />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-neutral-300">
+                      VRAJATIAN PASS
                     </span>
                   </div>
-                  <div className="flex-1 space-y-1">
-                    <h3 className={cn(
-                      "text-base font-bold transition-colors",
-                      isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-                    )}>
-                      {step.title}
-                    </h3>
-                    <p className="text-xs leading-relaxed text-muted-foreground">
-                      {step.description}
+                  <Wifi size={14} className="text-sky-400 rotate-90" />
+                </div>
+
+                <div className="space-y-0.5 pt-1">
+                  <p className="text-xs font-bold text-white tracking-wide">Suite 408 • Royal Villa</p>
+                  <p className="text-[9px] text-neutral-400 font-mono">ID: #VR-88219 • Guest Pass</p>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-neutral-800/80 text-[10px]">
+                  <span className="inline-flex items-center gap-1 font-bold text-emerald-400">
+                    <ShieldCheck size={12} /> Contactless Key Ready
+                  </span>
+                  <span className="text-[9px] text-neutral-400">Tap to Unlock</span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Step Card 3: Interactive Live Sanctuary Explorer (DYNAMIC & IMPRESSIVE) */}
+            <motion.div
+              variants={cardVariants}
+              whileHover={{ y: -4 }}
+              transition={{ duration: 0.3 }}
+              className="rounded-3xl bg-card border border-neutral-200 p-6 flex flex-col justify-between space-y-4 shadow-xs"
+            >
+              <div className="space-y-1">
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground block">
+                  Step 03
+                </span>
+                <h3 className="text-sm font-bold text-foreground">
+                  Browse &amp; Select Hotels
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Switch between handpicked collections with real-time suite availability.
+                </p>
+              </div>
+
+              {/* Interactive Sanctuary Preview Card */}
+              <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-2.5 space-y-2.5">
+                {/* Clickable tabs */}
+                <div className="grid grid-cols-4 gap-1">
+                  {SANCTUARY_TABS.map((tab) => {
+                    const isSelected = activeSanctuary.id === tab.id
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setActiveSanctuary(tab)}
+                        className={`text-[9px] font-bold py-1 px-1 rounded-lg truncate transition-all ${
+                          isSelected
+                            ? "bg-neutral-900 text-white shadow-xs"
+                            : "bg-white text-neutral-600 hover:text-neutral-900 border border-neutral-200"
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {/* Animated Photo Preview */}
+                <div className="relative rounded-xl overflow-hidden aspect-[16/9] bg-muted shadow-xs">
+                  <AnimatePresence mode="wait">
+                    <motion.img
+                      key={activeSanctuary.id}
+                      src={activeSanctuary.image}
+                      alt={activeSanctuary.name}
+                      initial={{ opacity: 0, scale: 1.05 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.35 }}
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                  </AnimatePresence>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                  <div className="absolute bottom-2 left-2.5 right-2.5 text-white">
+                    <p className="text-[11px] font-bold leading-tight truncate drop-shadow-sm">
+                      {activeSanctuary.name}
+                    </p>
+                    <p className="text-[9px] text-white/80 truncate">
+                      {activeSanctuary.location}
                     </p>
                   </div>
-                  <div className={cn(
-                    "rounded-xl p-2.5 border transition-all duration-350 shrink-0",
-                    isActive ? step.color : "bg-muted/50 border-transparent text-muted-foreground"
-                  )}>
-                    <Icon className="h-5 w-5" />
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Step Card 4: VIP Voucher & Best Deal (ELEGANT & CLEAR) */}
+            <motion.div
+              variants={cardVariants}
+              whileHover={{ y: -4 }}
+              transition={{ duration: 0.3 }}
+              className="rounded-3xl bg-card border border-neutral-200 p-6 flex flex-col justify-between space-y-4 shadow-xs"
+            >
+              <div className="space-y-1">
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground block">
+                  Step 04
+                </span>
+                <h3 className="text-sm font-bold text-foreground">
+                  Secure the Best Deal
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Enjoy exclusive member discounts and our best-rate price match guarantee.
+                </p>
+              </div>
+
+              {/* VIP Voucher Card with instant copy */}
+              <div className="rounded-2xl border border-sky-300 bg-sky-50/80 p-3.5 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-950">
+                    VIP Member Code
+                  </span>
+                  <span className="text-[10px] font-black text-sky-800 bg-sky-200/80 px-2 py-0.5 rounded-full">
+                    25% OFF
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between bg-white rounded-xl border border-sky-200 px-3 py-1.5 shadow-2xs">
+                  <span className="font-mono text-xs font-bold text-neutral-900 tracking-wider">
+                    VRAJATIAN25
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleCopy}
+                    className="inline-flex items-center gap-1 text-[10px] font-bold text-sky-700 hover:text-sky-900 transition-colors"
+                  >
+                    {copied ? (
+                      <>
+                        <Check size={11} className="text-emerald-600" />
+                        <span className="text-emerald-600">Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={11} />
+                        <span>Copy</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <div className="space-y-1 pt-1 text-[10px] text-neutral-600 font-medium">
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle2 size={11} className="text-emerald-600 shrink-0" />
+                    <span>Guaranteed Price-Match Protection</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle2 size={11} className="text-emerald-600 shrink-0" />
+                    <span>Free 24h Flexible Cancellation</span>
                   </div>
                 </div>
-              )
-            })}
-          </div>
-
-          {/* Right: Active step details display */}
-          <div className="lg:col-span-6">
-            <Card className="shadow-lg border p-2 transition-all duration-500 bg-card rounded-2xl">
-              <CardHeader className="flex flex-row items-center justify-between border-b pb-6 space-y-0">
-                <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-primary animate-pulse">
-                    Step {STEPS[activeStep].number}
-                  </span>
-                  <CardTitle className="mt-1 text-2xl font-black">{STEPS[activeStep].title}</CardTitle>
-                </div>
-                <div className={cn("rounded-2xl p-4 shrink-0 border", STEPS[activeStep].color)}>
-                  {(() => {
-                    const ActiveIcon = STEPS[activeStep].icon
-                    return <ActiveIcon className="h-7 w-7" />
-                  })()}
-                </div>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="space-y-4 mb-8">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground">
-                    Included Services & Inclusions:
-                  </h4>
-                  <ul className="space-y-2.5">
-                    {STEPS[activeStep].details.map((detail, index) => (
-                      <li key={index} className="flex items-start gap-2.5 text-sm text-muted-foreground">
-                        <CheckCircle2 className="mt-0.5 h-4.5 w-4.5 shrink-0 text-emerald-500" />
-                        <span>{detail}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="rounded-xl bg-muted/60 border border-muted p-4 text-xs font-medium italic text-muted-foreground">
-                  {STEPS[activeStep].tip}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </motion.div>
+          </motion.div>
         </div>
       </div>
     </section>

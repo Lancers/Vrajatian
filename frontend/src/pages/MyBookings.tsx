@@ -44,38 +44,38 @@ function MyBookings() {
     <div className="container mx-auto px-4 py-10 max-w-5xl space-y-8">
       {/* Title */}
       <div>
-        <h1 className="text-3xl font-black tracking-tight text-foreground">My Bookings Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Manage and track your active, past, and customized trip proposals.</p>
+        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">My Bookings Dashboard</h1>
+        <p className="text-muted-foreground mt-1 text-sm">Manage and track your active, past, and customized trip proposals.</p>
       </div>
 
       {/* Stats row */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border bg-card p-5 shadow-sm flex items-center justify-between">
+        <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-xs flex items-center justify-between">
           <div className="space-y-1">
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Trips Scheduled</span>
             <p className="text-3xl font-black text-foreground">{stats.totalTrips}</p>
           </div>
-          <div className="p-3 bg-primary/10 rounded-xl text-primary">
+          <div className="p-3 bg-sky-50 dark:bg-sky-950/60 rounded-xl text-sky-600 dark:text-sky-400">
             <Luggage className="h-6 w-6" />
           </div>
         </div>
 
-        <div className="rounded-2xl border bg-card p-5 shadow-sm flex items-center justify-between">
+        <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-xs flex items-center justify-between">
           <div className="space-y-1">
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Upcoming Adventures</span>
             <p className="text-3xl font-black text-foreground">{stats.upcomingTrips}</p>
           </div>
-          <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-500">
+          <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-600 dark:text-emerald-400">
             <CalendarRange className="h-6 w-6" />
           </div>
         </div>
 
-        <div className="rounded-2xl border bg-card p-5 shadow-sm flex items-center justify-between">
+        <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-xs flex items-center justify-between">
           <div className="space-y-1">
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Total Invested</span>
             <p className="text-3xl font-black text-foreground">{formatPrice(stats.totalSpent)}</p>
           </div>
-          <div className="p-3 bg-sky-500/10 rounded-xl text-sky-500">
+          <div className="p-3 bg-sky-500/10 rounded-xl text-sky-600 dark:text-sky-400">
             <CreditCard className="h-6 w-6" />
           </div>
         </div>
@@ -85,7 +85,7 @@ function MyBookings() {
       {nextTrip && (
         <div
           className={cn(
-            "relative overflow-hidden rounded-3xl border bg-gradient-to-r from-primary to-sky-600 p-6 text-white shadow-md flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6"
+            "relative overflow-hidden rounded-3xl border border-neutral-800 bg-neutral-900 p-6 sm:p-8 text-white shadow-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6"
           )}
         >
           {/* Decorative background shape */}
@@ -103,7 +103,7 @@ function MyBookings() {
             </p>
           </div>
 
-          <div className="shrink-0 flex items-center gap-4 bg-white/10 rounded-2xl p-4 backdrop-blur-sm border border-white/10 z-10">
+          <div className="shrink-0 flex items-center gap-4 bg-neutral-900 text-white rounded-2xl p-4 border border-neutral-800 z-10 shadow-sm">
             <div className="text-center">
               <span className="text-3xl font-black leading-none block">{nextTrip.daysRemaining}</span>
               <span className="text-[10px] font-bold uppercase tracking-wide opacity-80 mt-0.5 block">

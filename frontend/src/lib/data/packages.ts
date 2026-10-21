@@ -1,4 +1,5 @@
 import { api } from "src/lib/api"
+import { DEFAULT_PACKAGES } from "./default-packages"
 
 export interface ItineraryDay {
   day: number
@@ -81,15 +82,32 @@ function toFormData(input: NewPackageInput, imageFile?: File | null): FormData {
   return fd
 }
 
-/** Published packages only — used by every public-facing page. Optionally filtered by type. */
+/** Published packages only — used by every public-facing page. Optionally filtered by type. Falls back to curated sample packages if API is offline. */
 export async function getPackages(opts?: { type?: PackageType }): Promise<TravelPackage[]> {
   const query = opts?.type ? `?type=${encodeURIComponent(opts.type)}` : ""
-  return api.get<TravelPackage[]>(`/packages${query}`)
+  try {
+    const list = await api.get<TravelPackage[]>(`/packages${query}`)
+    if (list && list.length > 0) return list
+  } catch {
+    // API is offline or not configured; gracefully fall back to curated packages
+  }
+
+  const filtered = opts?.type
+    ? DEFAULT_PACKAGES.filter((p) => p.type === opts.type)
+    : DEFAULT_PACKAGES
+  return filtered
 }
 
 /** A single published package by slug, or null. */
 export async function getPackageBySlug(slug: string): Promise<TravelPackage | null> {
-  return api.getOrNull<TravelPackage>(`/packages/${encodeURIComponent(slug)}`)
+  try {
+    const pkg = await api.getOrNull<TravelPackage>(`/packages/${encodeURIComponent(slug)}`)
+    if (pkg) return pkg
+  } catch {
+    // fallback
+  }
+
+  return DEFAULT_PACKAGES.find((p) => p.slug === slug || p.id === slug) ?? null
 }
 
 /** Every package incl. drafts — admin only (the API enforces admin access). */

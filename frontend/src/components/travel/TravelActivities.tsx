@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, MountainSnow } from "lucide-react"
 
 import { Button } from "src/components/ui/button"
 import PackageCard from "src/components/travel/PackageCard"
@@ -16,27 +16,28 @@ function TravelActivities() {
   }, [])
 
   const featured = activities.filter((a) => a.isFeatured)
-  const shown = (featured.length > 0 ? featured : activities).slice(0, 6)
+  const shown = (featured.length > 0 ? featured : activities).slice(0, 3)
 
-  // Nothing to show yet (no activities added in admin) — skip the section entirely.
   if (shown.length === 0) return null
 
   return (
-    <section className="py-24 bg-background">
-      <div className="container mx-auto px-4">
-        <div className="mb-14 flex flex-wrap items-end justify-between gap-6">
-          <div>
-            <span className="text-xs font-bold uppercase tracking-widest text-primary bg-primary/10 px-3.5 py-1 rounded-full">
-              Activities
+    <section className="py-20 sm:py-28 bg-muted/20 border-t border-border/60">
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="mb-12 flex flex-wrap items-end justify-between gap-6">
+          <div className="max-w-xl">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-800 px-3.5 py-1 text-xs font-bold uppercase tracking-[2px] text-sky-700 dark:text-sky-300">
+              <MountainSnow className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" /> High Thrill Expeditions
             </span>
-            <h2 className="text-3xl font-black tracking-tight sm:text-4xl mt-3">Adventure Activities</h2>
-            <p className="mt-2 text-sm text-muted-foreground max-w-md">
-              Paragliding, rafting, and more thrilling experiences you can book on the go.
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground mt-3">
+              Adventure on the Edge
+            </h2>
+            <p className="mt-2 text-sm sm:text-base text-muted-foreground leading-relaxed">
+              From white-water glacial rapids in Rishikesh to tandem paragliding above the Dhauladhar ranges — certified safety standards with premier mountain leaders.
             </p>
           </div>
-          <Button asChild variant="outline" className="gap-2">
+          <Button asChild className="rounded-full gap-2 bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100 font-semibold px-5 text-sm shadow-xs transition-all active:scale-95">
             <Link to="/activities">
-              View All Activities <ArrowRight size={16} />
+              Explore All Adventures <ArrowRight size={15} className="text-sky-400 dark:text-sky-600" />
             </Link>
           </Button>
         </div>

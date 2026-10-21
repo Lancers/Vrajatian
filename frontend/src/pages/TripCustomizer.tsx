@@ -187,36 +187,51 @@ function TripCustomizer() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-10 max-w-4xl">
-      <div className="mb-10 text-center">
-        <span className="text-xs font-bold uppercase tracking-widest text-primary bg-primary/10 px-3.5 py-1 rounded-full">
-          Tailor-Made Travel
+    <div className="container mx-auto px-4 sm:px-6 py-10 sm:py-16 max-w-5xl">
+      <div className="mb-12 text-center max-w-2xl mx-auto">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-800 px-3.5 py-1 text-xs font-bold uppercase tracking-[2px] text-sky-700 dark:text-sky-300 mb-3 shadow-2xs">
+          ✦ Bespoke Travel Studio
         </span>
-        <h1 className="text-3xl font-black tracking-tight sm:text-4xl mt-3">Plan & Customize Your Trip</h1>
-        <p className="mt-2 text-muted-foreground max-w-md mx-auto">
-          Tailor every accommodation and transport tier to create your perfect dream getaway.
+        <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-foreground leading-[1.12]">
+          Design Your Personal Expedition
+        </h1>
+        <p className="mt-3 text-base text-muted-foreground leading-relaxed">
+          Calibrate stays, private fleet mobility, and group parameters to create your dream Indian escape.
         </p>
       </div>
 
       {step < 5 && (
-        <div className="mb-8 flex items-center justify-center gap-2">
-          {[1, 2, 3, 4].map((n) => (
-            <div key={n} className="flex items-center">
-              <div
-                className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-full border-2 text-xs font-black transition-all",
-                  step === n && "border-primary bg-primary text-primary-foreground scale-105",
-                  step > n && "border-emerald-500 bg-emerald-500 text-white",
-                  step < n && "border-muted text-muted-foreground"
-                )}
-              >
-                {n}
-              </div>
-              {n < 4 && (
+        <div className="mb-10 flex items-center justify-center gap-2">
+          {[
+            { num: 1, label: "Destination" },
+            { num: 2, label: "Schedule" },
+            { num: 3, label: "Standards" },
+            { num: 4, label: "Contact" },
+          ].map((s) => (
+            <div key={s.num} className="flex items-center">
+              <div className="flex flex-col items-center">
                 <div
                   className={cn(
-                    "h-0.5 w-10 sm:w-16 mx-2 rounded",
-                    step > n ? "bg-emerald-500" : "bg-muted"
+                    "flex h-10 w-10 items-center justify-center rounded-full border-2 text-xs font-black transition-all shadow-xs",
+                    step === s.num && "border-neutral-900 bg-neutral-900 text-white dark:border-white dark:bg-white dark:text-neutral-900 scale-110 shadow-md",
+                    step > s.num && "border-emerald-600 bg-emerald-600 text-white",
+                    step < s.num && "border-border bg-card text-muted-foreground"
+                  )}
+                >
+                  {step > s.num ? "✓" : `0${s.num}`}
+                </div>
+                <span className={cn(
+                  "text-[10px] font-bold uppercase tracking-wider mt-1.5 hidden sm:block",
+                  step === s.num ? "text-sky-600 dark:text-sky-400" : "text-muted-foreground"
+                )}>
+                  {s.label}
+                </span>
+              </div>
+              {s.num < 4 && (
+                <div
+                  className={cn(
+                    "h-0.5 w-8 sm:w-16 mx-2 sm:mx-3 rounded transition-all",
+                    step > s.num ? "bg-emerald-600" : "bg-border"
                   )}
                 />
               )}
@@ -225,14 +240,14 @@ function TripCustomizer() {
         </div>
       )}
 
-      <div className="grid gap-8 md:grid-cols-[1fr_320px] items-start">
+      <div className="grid gap-8 md:grid-cols-[1fr_340px] items-start">
         <div className="space-y-6">
           {/* STEP 1: SELECT DESTINATION BASE */}
           {step === 1 && (
-            <Card className="rounded-2xl border shadow-sm">
+            <Card className="rounded-3xl border border-border/80 shadow-sm p-2 sm:p-4">
               <CardHeader>
-                <CardTitle className="text-xl">1. Choose a Base Vacation</CardTitle>
-                <CardDescription>Select one of our professional itineraries to customize.</CardDescription>
+                <CardTitle className="text-2xl font-bold text-foreground">1. Choose a Base Itinerary</CardTitle>
+                <CardDescription>Select one of our signature routes to adapt to your schedule and standards.</CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 {packages.map((pkg) => (

@@ -68,65 +68,78 @@ function Contact() {
           alt="Snow-capped mountains"
           className="absolute inset-0 h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-black/40" />
-        <div className="relative z-10 space-y-2 text-center text-white">
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">Get in Touch</h1>
-          <p className="mx-auto max-w-md text-sm text-white/80 sm:text-base">
-            Have a question or ready to plan your next adventure? We'd love to hear from you.
+        <div className="absolute inset-0 bg-black/55" />
+        <div className="relative z-10 space-y-3 text-center text-white px-4">
+          <span className="inline-block text-xs font-bold uppercase tracking-[2.5px] text-sky-300">
+            ✦ Concierge Desk
+          </span>
+          <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl md:text-5xl">
+            Let Us Craft Your Indian Journey
+          </h1>
+          <p className="mx-auto max-w-lg text-sm text-white/80 sm:text-base leading-relaxed">
+            Have questions regarding royal havelis, permits, or private fleet transfers? Our regional specialists are here to assist.
           </p>
         </div>
       </section>
 
-      <section className="container mx-auto px-4 py-12 md:py-16">
-        <div className="grid gap-10 md:grid-cols-2 md:gap-14">
-          <Card>
+      <section className="container mx-auto px-4 sm:px-6 py-12 md:py-20">
+        <div className="grid gap-10 md:grid-cols-2 md:gap-14 max-w-5xl mx-auto">
+          <Card className="rounded-3xl border border-border/80 shadow-md p-2 sm:p-4">
             <CardContent className="pt-6">
-              <h2 className="mb-6 text-xl font-semibold">Send us a message</h2>
+              <h2 className="mb-6 text-2xl font-bold text-foreground">Send an Inquiry</h2>
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
+                  <Label htmlFor="name" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Your Full Name</Label>
                   <Input
                     id="name"
-                    placeholder="Your name"
+                    placeholder="Aarav Sharma"
                     required
                     value={form.name}
                     onChange={(e) => update("name", e.target.value)}
+                    className="h-11 rounded-xl"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Email Address</Label>
                   <Input
                     id="email"
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder="aarav@example.com"
                     required
                     value={form.email}
                     onChange={(e) => update("email", e.target.value)}
+                    className="h-11 rounded-xl"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="subject">Subject</Label>
+                  <Label htmlFor="subject" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Destination / Interest</Label>
                   <Input
                     id="subject"
-                    placeholder="How can we help?"
+                    placeholder="e.g. Rajasthan Heritage Tour in December"
                     value={form.subject}
                     onChange={(e) => update("subject", e.target.value)}
+                    className="h-11 rounded-xl"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="message">Message</Label>
+                  <Label htmlFor="message" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Your Message or Dates</Label>
                   <Textarea
                     id="message"
-                    rows={5}
-                    placeholder="Tell us more about what you're looking for…"
+                    rows={4}
+                    placeholder="Tell us about your group size, travel dates, or special requests…"
                     required
                     value={form.message}
                     onChange={(e) => update("message", e.target.value)}
+                    className="rounded-xl"
                   />
                 </div>
-                <Button type="submit" className="w-full sm:w-auto">
-                  <Send className="mr-2 h-4 w-4" />
-                  Send via WhatsApp
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="w-full rounded-full font-bold bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-neutral-900 shadow-sm"
+                >
+                  <Send className="mr-2 h-4 w-4 text-sky-400 dark:text-sky-600" />
+                  Connect With Us via WhatsApp
                 </Button>
               </form>
             </CardContent>

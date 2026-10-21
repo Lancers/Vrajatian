@@ -1,101 +1,114 @@
 import { useState } from "react"
-import { ChevronDown, HelpCircle } from "lucide-react"
-
+import { motion, AnimatePresence } from "framer-motion"
+import { ChevronDown } from "lucide-react"
 import { cn } from "src/lib/utils"
-import { Card } from "src/components/ui/card"
 
-const FAQS = [
+interface FAQItem {
+  q: string
+  a: string
+}
+
+const FAQS: FAQItem[] = [
   {
-    question: "Can I customize the existing packages listed on the website?",
-    answer:
-      "Absolutely! Vrajatian is built on customizability. You can use any package as a base, then use our Trip Customizer tool to adjust duration, include/exclude specific day itineraries, select premium or budget hotel tiers, and choose specialized local activities.",
+    q: "How do I book a hotel on Vrajatian?",
+    a: "Browse our handpicked sanctuaries, select your dates and room category, and confirm instantly with our secured checkout. You'll immediately receive your booking confirmation and direct contact with our on-ground concierge.",
   },
   {
-    question: "What does the 'Best Price Guarantee' cover?",
-    answer:
-      "We promise you the best value for your trip. If you find the same package details (same accommodation class, transportation, and inclusions) cheaper elsewhere within 48 hours of booking, we will match the price and credit an additional 10% of the difference to your account.",
+    q: "Is it necessary to verify my identity?",
+    a: "Yes. A swift 1-minute verification protects both you and our boutique partner properties, guaranteeing expedited, keyless check-in and prioritized room allocation upon arrival.",
   },
   {
-    question: "What is your booking cancellation and refund policy?",
-    answer:
-      "We offer free cancellation with a 100% refund up to 14 days prior to your departure date. For cancellations between 7 and 13 days, a 50% refund is issued. Within 7 days of departure, bookings are non-refundable as guide permits and hotel rooms are fully pre-paid.",
+    q: "Can I modify or cancel my reservation?",
+    a: "Yes. You can alter travel dates or cancel with a single click from your bookings dashboard. Most properties offer 100% full refunds up to 72 hours before check-in.",
   },
   {
-    question: "Do you arrange flight connections and travel insurance?",
-    answer:
-      "Yes! While our base package prices focus on local transfers, stays, and sightseeing, you can easily toggle flight additions and comprehensive travel insurance (including medical & trip interruption coverage) during the Booking Wizard step.",
+    q: "Are there any hidden fees or surprise taxes?",
+    a: "None whatsoever. All state luxury tariffs, resort fees, and GST are clearly broken down and displayed upfront before you make a payment.",
   },
   {
-    question: "What safety protocols are in place for high-altitude treks?",
-    answer:
-      "Safety is our absolute priority. Our Himalayan treks feature certified mountaineering guides, fully stocked medical kits including portable oxygen cylinders, and a strict acclimatization schedule. We maintain a guide-to-traveler ratio of at least 1:5 on all hard-difficulty treks.",
+    q: "How do I secure the best seasonal deals?",
+    a: "Booking at least 21 days in advance unlocks our Tier-1 member discounts. You can also apply our active promo code 'VRAJATIAN25' or connect with our AI Helpdesk for bespoke group rates.",
+  },
+  {
+    q: "Is my personal data and payment info secure?",
+    a: "We implement 256-bit SSL encryption, tokenized payment gateways, and strict privacy protection protocols compliant with international data standards.",
+  },
+  {
+    q: "What should I do if I need support during my stay?",
+    a: "Our dedicated 24/7 Concierge Support and AI Helpdesk are always on standby. Simply message us directly through the site or call your assigned property ambassador.",
   },
 ]
 
 function FAQSection() {
-  const [openIdx, setOpenIdx] = useState<number | null>(null)
-
-  function toggleFaq(idx: number) {
-    setOpenIdx((prev) => (prev === idx ? null : idx))
-  }
+  const [openIdx, setOpenIdx] = useState<number | null>(0)
 
   return (
-    <section className="py-24 bg-muted/30 border-y">
-      <div className="container mx-auto px-4">
-        <div className="mx-auto mb-16 max-w-2xl text-center">
-          <span className="mb-3 inline-flex items-center gap-2 rounded-full border bg-primary/10 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-primary">
-            <HelpCircle size={14} /> F.A.Q.
-          </span>
-          <h2 className="mb-4 text-3xl font-black tracking-tight sm:text-4xl">Common Travel Questions</h2>
-          <p className="text-sm text-muted-foreground">
-            Everything you need to know about customizing, booking, and executing your perfect Indian holiday.
-          </p>
+    <section className="py-20 sm:py-28 bg-background border-t border-border/60">
+      <div className="container mx-auto px-4 sm:px-8">
+        <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
+          <motion.h2
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.5 }}
+            className="text-3xl sm:text-5xl font-black tracking-tight text-foreground"
+          >
+            Frequently Asked Questions
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="text-xs sm:text-sm text-muted-foreground leading-relaxed"
+          >
+            Everything you need to know about reserving handpicked stays, member privileges, and verified seamless check-ins.
+          </motion.p>
         </div>
 
-        <div className="mx-auto max-w-3xl space-y-4">
-          {FAQS.map((faq, idx) => {
+        {/* Single Centered Column */}
+        <div className="max-w-3xl mx-auto space-y-3.5">
+          {FAQS.map((item, idx) => {
             const isOpen = openIdx === idx
             return (
-              <Card
+              <motion.div
                 key={idx}
-                className={cn(
-                  "overflow-hidden rounded-2xl border transition-all duration-300 p-0 relative bg-card",
-                  isOpen
-                    ? "border-primary shadow-sm bg-card"
-                    : "border-border/60 hover:border-border hover:bg-card/75"
-                )}
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ duration: 0.4, delay: idx * 0.05 }}
+                className="rounded-2xl border border-neutral-200 bg-white overflow-hidden shadow-2xs transition-all hover:border-neutral-300"
               >
                 <button
-                  onClick={() => toggleFaq(idx)}
-                  className="flex w-full items-center justify-between p-6 text-left"
+                  type="button"
+                  onClick={() => setOpenIdx(isOpen ? null : idx)}
+                  className="w-full flex items-center justify-between p-4 sm:p-5 text-left text-xs sm:text-sm font-bold text-neutral-900 hover:text-sky-700 transition-colors"
                 >
-                  <span className={cn(
-                    "font-bold text-sm sm:text-base pr-4 transition-all duration-300",
-                    isOpen ? "text-primary border-l-2 border-primary pl-3" : "text-foreground"
-                  )}>
-                    {faq.question}
-                  </span>
+                  <span>{item.q}</span>
                   <ChevronDown
+                    size={16}
                     className={cn(
-                      "h-5 w-5 shrink-0 text-muted-foreground transition-all duration-300",
-                      isOpen && "rotate-180 text-primary"
+                      "text-neutral-400 transition-transform duration-300 shrink-0 ml-3",
+                      isOpen && "rotate-180 text-neutral-800"
                     )}
                   />
                 </button>
-
-                <div
-                  className={cn(
-                    "grid transition-all duration-300 ease-in-out",
-                    isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-4 pb-4 sm:px-5 sm:pb-5 pt-0 text-xs text-neutral-600 leading-relaxed border-t border-neutral-100 mt-1">
+                        {item.a}
+                      </div>
+                    </motion.div>
                   )}
-                >
-                  <div className="overflow-hidden">
-                    <p className="border-t px-6 pb-6 pt-4 text-sm leading-relaxed text-muted-foreground">
-                      {faq.answer}
-                    </p>
-                  </div>
-                </div>
-              </Card>
+                </AnimatePresence>
+              </motion.div>
             )
           })}
         </div>

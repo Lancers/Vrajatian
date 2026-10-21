@@ -1,36 +1,40 @@
 import { useEffect, useRef, useState } from "react"
-import { BadgeDollarSign, Globe, Shield, Users } from "lucide-react"
+import { BadgeCheck, Compass, HeartHandshake, ShieldCheck, Sparkles } from "lucide-react"
 
 import { cn } from "src/lib/utils"
 
 const features = [
   {
-    icon: Shield,
-    colorClass: "bg-sky-500/10 text-sky-500",
-    title: "Secure Booking",
+    icon: ShieldCheck,
+    colorClass: "bg-primary/10 text-primary",
+    badge: "100% Protection",
+    title: "Protected & Flexible",
     description:
-      "Your payments and personal data are protected with bank-level encryption and a full money-back guarantee.",
+      "Bank-grade encrypted bookings with guaranteed 100% money-back cancellation up to 14 days before departure.",
   },
   {
-    icon: Globe,
-    colorClass: "bg-emerald-500/10 text-emerald-500",
-    title: "200+ Destinations",
+    icon: Compass,
+    colorClass: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+    badge: "Authentic Access",
+    title: "Handpicked Heritage Stays",
     description:
-      "From backwaters to Himalayan peaks — explore a curated catalog spanning every region of India.",
+      "From royal 18th-century Rajput havelis to eco-luxury backwater houseboats, every stay is personally inspected.",
   },
   {
-    icon: Users,
-    colorClass: "bg-purple-500/10 text-purple-500",
-    title: "Expert Local Guides",
+    icon: HeartHandshake,
+    colorClass: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+    badge: "Local Masters",
+    title: "Certified Native Guides",
     description:
-      "Every trip is led by certified local experts who know the hidden gems, culture, and best routes.",
+      "Accompanied by licensed local historians, botanists, and mountaineers who unlock doors closed to standard tourists.",
   },
   {
-    icon: BadgeDollarSign,
-    colorClass: "bg-amber-500/10 text-amber-500",
-    title: "Best Price Guarantee",
+    icon: BadgeCheck,
+    colorClass: "bg-sky-500/10 text-sky-600 dark:text-sky-400",
+    badge: "Price Guarantee",
+    title: "Uncompromising Value",
     description:
-      "Found it cheaper elsewhere? We'll match the price and add a 10% credit towards your next adventure.",
+      "Direct relationships with local partners mean transparent luxury pricing without inflated intermediary margins.",
   },
 ]
 
@@ -62,16 +66,20 @@ function WhyChooseUs() {
   }, [])
 
   return (
-    <section ref={sectionRef} className="py-20 sm:py-28">
-      <div className="container mx-auto px-4">
+    <section ref={sectionRef} className="py-24 sm:py-32 bg-background relative overflow-hidden">
+      {/* Subtle ambient background glow */}
+      <div className="absolute left-1/2 top-0 -translate-x-1/2 -z-10 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
+
+      <div className="container mx-auto px-4 sm:px-6">
         <div className="mx-auto mb-16 max-w-2xl text-center">
-          <span className="mb-3 inline-block text-sm font-extrabold uppercase tracking-[3px] text-primary">
-            Why Vrajatian
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-800 px-3.5 py-1 text-xs font-bold uppercase tracking-[2px] text-sky-700 dark:text-sky-300 mb-3 shadow-2xs">
+            <Sparkles className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" /> The Vrajatian Distinction
           </span>
-          <h2 className="mb-4 text-3xl font-black tracking-tight sm:text-4xl">Travel With Confidence</h2>
-          <p className="text-lg text-muted-foreground">
-            We go beyond planning vacations — we craft transformative journeys backed by trust, expertise, and
-            unbeatable value.
+          <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-foreground">
+            Travel With Unrivaled Confidence
+          </h2>
+          <p className="mt-4 text-base sm:text-lg text-muted-foreground leading-relaxed">
+            We don&apos;t just book hotels and cabs. We curate transformative Indian encounters backed by pedigree, local kinship, and complete guest safety.
           </p>
         </div>
 
@@ -82,20 +90,30 @@ function WhyChooseUs() {
               data-index={idx}
               style={{ transitionDelay: `${idx * 120}ms` }}
               className={cn(
-                "group rounded-2xl border bg-card p-8 text-center shadow-sm transition-all duration-700 hover:-translate-y-1 hover:shadow-lg",
+                "group relative rounded-2xl border border-border/80 bg-card p-8 shadow-xs transition-all duration-700 hover:-translate-y-1.5 hover:shadow-xl hover:border-sky-400/50",
                 revealed[idx] ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
               )}
             >
-              <div
-                className={cn(
-                  "mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110",
-                  feature.colorClass
-                )}
-              >
-                <feature.icon className="h-7 w-7" />
+              <div className="flex items-center justify-between mb-6">
+                <div
+                  className={cn(
+                    "flex h-14 w-14 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110",
+                    feature.colorClass
+                  )}
+                >
+                  <feature.icon className="h-7 w-7" />
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-full">
+                  {feature.badge}
+                </span>
               </div>
-              <h3 className="mb-3 text-lg font-bold">{feature.title}</h3>
-              <p className="text-sm leading-relaxed text-muted-foreground">{feature.description}</p>
+
+              <h3 className="text-xl font-bold text-foreground mb-2 group-hover:text-sky-600 transition-colors">
+                {feature.title}
+              </h3>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {feature.description}
+              </p>
             </div>
           ))}
         </div>
